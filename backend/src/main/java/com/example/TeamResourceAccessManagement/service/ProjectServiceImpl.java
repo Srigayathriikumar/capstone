@@ -34,8 +34,31 @@ public class ProjectServiceImpl implements ProjectService {
     
     @Override
     public ProjectResponseDTO createProject(ProjectRequestDTO projectRequestDTO) {
+        System.out.println("Creating project with data: " + projectRequestDTO.getName());
+        System.out.println("Manager ID: " + projectRequestDTO.getManagerId());
+        System.out.println("Member IDs: " + projectRequestDTO.getMemberIds());
+        
         Project project = ProjectMapper.toEntity(projectRequestDTO);
         Project savedProject = projectRepository.save(project);
+        
+        // Add manager to project if specified
+        if (projectRequestDTO.getManagerId() != null) {
+            System.out.println("Adding manager with ID: " + projectRequestDTO.getManagerId());
+            addUserToProject(savedProject.getId(), projectRequestDTO.getManagerId());
+        }
+        
+        // Add members to project if specified
+        if (projectRequestDTO.getMemberIds() != null && !projectRequestDTO.getMemberIds().isEmpty()) {
+            System.out.println("Adding " + projectRequestDTO.getMemberIds().size() + " members to project");
+            addMultipleUsersToProject(savedProject.getId(), projectRequestDTO.getMemberIds());
+        }
+        
+        // Reload project to get updated user associations
+        Optional<Project> reloadedProject = projectRepository.findById(savedProject.getId());
+        if (reloadedProject.isPresent()) {
+            return ProjectMapper.toResponse(reloadedProject.get());
+        }
+        
         return ProjectMapper.toResponse(savedProject);
     }
     
@@ -94,14 +117,24 @@ public class ProjectServiceImpl implements ProjectService {
     
     @Override
     public void addUserToProject(Long projectId, Long userId) {
+        System.out.println("Adding user " + userId + " to project " + projectId);
         Optional<Project> projectOpt = projectRepository.findById(projectId);
         Optional<User> userOpt = userRepository.findById(userId);
         
         if (projectOpt.isPresent() && userOpt.isPresent()) {
             Project project = projectOpt.get();
             User user = userOpt.get();
-            project.getUsers().add(user);
-            projectRepository.save(project);
+            
+            // Check if user is already in project to avoid duplicates
+            if (!project.getUsers().contains(user)) {
+                project.getUsers().add(user);
+                projectRepository.save(project);
+                System.out.println("Successfully added user " + user.getUsername() + " to project " + project.getName());
+            } else {
+                System.out.println("User " + user.getUsername() + " is already in project " + project.getName());
+            }
+        } else {
+            System.out.println("Project or User not found - ProjectId: " + projectId + ", UserId: " + userId);
         }
     }
     
@@ -127,7 +160,16 @@ public class ProjectServiceImpl implements ProjectService {
     
     @Override
     public void addMultipleUsersToProject(Long projectId, List<Long> userIds) {
-        userIds.forEach(userId -> addUserToProject(projectId, userId));
+        System.out.println("Adding multiple users to project " + projectId + ": " + userIds);
+        if (userIds != null && !userIds.isEmpty()) {
+            userIds.forEach(userId -> {
+                try {
+                    addUserToProject(projectId, userId);
+                } catch (Exception e) {
+                    System.err.println("Error adding user " + userId + " to project " + projectId + ": " + e.getMessage());
+                }
+            });
+        }
     }
     
     @Override

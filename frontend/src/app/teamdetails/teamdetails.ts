@@ -8,6 +8,7 @@ import { ButtonComponent } from '../components/ui/button/button.component';
 import { CardComponent } from '../components/ui/card/card.component';
 import { ToastComponent } from '../components/toast/toast.component';
 import { CommonResourcesComponent } from '../pages/resources/common-resources/common-resources.component';
+import { CreateProjectComponent } from '../pages/create-project/create-project.component';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
@@ -17,15 +18,17 @@ import { ToastModule } from 'primeng/toast';
 import { TableModule } from 'primeng/table';
 import { BadgeModule } from 'primeng/badge';
 import { TagModule } from 'primeng/tag';
+import { debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
+import { Subject, of } from 'rxjs';
 
 type TabType = 'overview' | 'members' | 'resources' | 'requests' | 'audit' | 'uploads';
 
 @Component({
   selector: 'app-teamdetails',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, CommonResourcesComponent, ButtonModule, CardModule, InputTextModule, DropdownModule, DialogModule, ToastModule, TableModule, BadgeModule, TagModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, CommonResourcesComponent, CreateProjectComponent, ButtonModule, CardModule, InputTextModule, DropdownModule, DialogModule, ToastModule, TableModule, BadgeModule, TagModule],
   templateUrl: 'teamdetails.html',
-  styleUrls: ['./teamdetails.css', './resources-columns.css', './notifications.css', './add-resource-buttons.css', './audit-log.css', './resources-overview.css', './resource-overview-cards.css']
+  styleUrls: ['./teamdetails.css', './resources-columns.css', './notifications.css', './add-resource-buttons.css', './audit-log.css', './resources-overview.css', './resource-overview-cards.css', './resource-access-modal.css']
 })
 export class Teamdetails implements OnInit {
   team: Team | null = null;
@@ -68,6 +71,7 @@ export class Teamdetails implements OnInit {
   userUploads: TeamResource[] = [];
   allProjects: Team[] = [];
   sidebarHidden = false;
+  showProjectSwitcher = false;
   
   // Chat properties
   showTeamChat = false;
@@ -135,6 +139,43 @@ export class Teamdetails implements OnInit {
       this.initializeUser();
       this.loadTeamData();
       this.loadAllProjects();
+    });
+    
+    // Setup debounced search
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(searchTerm => {
+        if (!searchTerm.trim()) {
+          return of([]);
+        }
+        console.log('API search for term:', searchTerm);
+        return this.teamService.searchUsers(searchTerm).pipe(
+          catchError(err => {
+            console.error('API search error:', err);
+            return of([]);
+          })
+        );
+      })
+    ).subscribe({
+      next: (searchResults) => {
+        console.log('API search results:', searchResults);
+        if (searchResults && searchResults.length > 0) {
+          const availableResults = searchResults.filter(employee => 
+            !this.isEmployeeSelected(employee.id)
+          );
+          // Only update if we got better results from API
+          if (availableResults.length > this.filteredEmployees.length) {
+            this.filteredEmployees = availableResults;
+            console.log('Updated with API results:', this.filteredEmployees);
+          }
+        }
+        this.isSearchingEmployees = false;
+      },
+      error: (err) => {
+        console.error('Error in debounced search subscription:', err);
+        this.isSearchingEmployees = false;
+      }
     });
   }
   
@@ -265,7 +306,18 @@ export class Teamdetails implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/dashboard']);
+    // Navigate to first available team or logout
+    this.teamService.getTeams().subscribe({
+      next: (teams) => {
+        if (teams && teams.length > 0) {
+          const firstTeam = teams.find(t => t.id !== this.teamId) || teams[0];
+          this.router.navigate(['/team', firstTeam.id]);
+        } else {
+          this.logout();
+        }
+      },
+      error: () => this.logout()
+    });
   }
 
   navigateToAuditLog(): void {
@@ -1261,6 +1313,7 @@ export class Teamdetails implements OnInit {
       case 'manager-resources': return 'Manager Controlled Resources';
       case 'requests': return 'Access Requests';
       case 'uploads': return 'My Uploads';
+      case 'create-project': return 'Create New Project';
       case 'audit': return 'Audit Log';
       default: return 'Team Details';
     }
@@ -1444,12 +1497,18 @@ export class Teamdetails implements OnInit {
     });
   }
   
-  switchProject(event: any): void {
-    const projectId = +event.target.value;
-    if (projectId && projectId !== this.teamId) {
-      this.router.navigate(['/team', projectId]).then(() => {
-        window.location.reload();
-      });
+  toggleProjectSwitcher(): void {
+    this.showProjectSwitcher = !this.showProjectSwitcher;
+  }
+
+  closeProjectSwitcher(): void {
+    this.showProjectSwitcher = false;
+  }
+
+  selectProject(projectId: number): void {
+    if (projectId !== this.teamId) {
+      this.closeProjectSwitcher();
+      this.router.navigate(['/team', projectId]);
     }
   }
   
@@ -1490,6 +1549,22 @@ export class Teamdetails implements OnInit {
   
   showRequestDetailsModal = false;
   selectedRequestDetails: any = null;
+  showCreateProjectModal = false;
+  createProjectForm!: FormGroup;
+  availableManagers: any[] = [];
+  filteredManagers: any[] = [];
+  selectedManager: any = null;
+  managerSearchTerm = '';
+  showManagerDropdown = false;
+  allEmployees: any[] = [];
+  filteredEmployees: any[] = [];
+  selectedEmployeeIds: number[] = [];
+  memberSearchTerm = '';
+  memberRoleFilter = '';
+  showEmployeeDropdown = false;
+  private searchSubject = new Subject<string>();
+  isSearchingEmployees = false;
+  searchNoResults = false;
   
   showRequestDetails(request: any): void {
     this.selectedRequestDetails = request;
@@ -1501,7 +1576,265 @@ export class Teamdetails implements OnInit {
     this.selectedRequestDetails = null;
   }
   
+  openCreateProjectModal(): void {
+    this.initializeCreateProjectForm();
+    this.loadAvailableManagers();
+    this.loadAllEmployees();
+    this.showCreateProjectModal = true;
+  }
+  
+  closeCreateProjectModal(): void {
+    this.showCreateProjectModal = false;
+    this.selectedEmployeeIds = [];
+    this.memberSearchTerm = '';
+    this.showEmployeeDropdown = false;
+    this.isSearchingEmployees = false;
+    this.searchNoResults = false;
+    this.createProjectForm.reset();
+  }
+  
+  initializeCreateProjectForm(): void {
+    this.createProjectForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(3)]],
+      description: ['', [Validators.required, Validators.minLength(10)]],
+      status: ['ACTIVE', Validators.required],
+      managerId: ['', Validators.required]
+    });
+  }
+  
+  loadAvailableManagers(): void {
+    this.teamService.getAllManagers().subscribe({
+      next: (managers) => {
+        console.log('Loaded managers:', managers);
+        this.availableManagers = managers || [];
+        this.filteredManagers = [...this.availableManagers];
+        // Fallback if no managers loaded
+        if (this.availableManagers.length === 0) {
+          this.availableManagers = [
+            { id: 2, username: 'priya.manager', email: 'priya@company.com', role: 'PROJECT_MANAGER' },
+            { id: 3, username: 'james.manager', email: 'james@company.com', role: 'PROJECT_MANAGER' }
+          ];
+          this.filteredManagers = [...this.availableManagers];
+        }
+      },
+      error: (err) => {
+        console.error('Error loading managers:', err);
+        // Fallback managers
+        this.availableManagers = [
+          { id: 2, username: 'priya.manager', email: 'priya@company.com', role: 'PROJECT_MANAGER' },
+          { id: 3, username: 'james.manager', email: 'james@company.com', role: 'PROJECT_MANAGER' }
+        ];
+        this.filteredManagers = [...this.availableManagers];
+      }
+    });
+  }
+  
+  loadAllEmployees(): void {
+    this.teamService.getAllEmployees().subscribe({
+      next: (employees) => {
+        console.log('Loaded employees:', employees);
+        this.allEmployees = employees || [];
+        this.filteredEmployees = [...this.allEmployees];
+      },
+      error: (err) => {
+        console.error('Error loading employees:', err);
+        // Fallback to mock data if API fails
+        this.allEmployees = [
+          { id: 1, username: 'rajesh.admin', email: 'rajesh@company.com', role: 'ADMIN' },
+          { id: 2, username: 'priya.manager', email: 'priya@company.com', role: 'PROJECT_MANAGER' },
+          { id: 6, username: 'arjun.dev', email: 'arjun@company.com', role: 'TEAM_MEMBER' },
+          { id: 7, username: 'emily.dev', email: 'emily@company.com', role: 'TEAM_MEMBER' },
+          { id: 9, username: 'sophia.test', email: 'sophia@company.com', role: 'TEAM_MEMBER' }
+        ];
+        this.filteredEmployees = [...this.allEmployees];
+      }
+    });
+  }
+  
+  filterMembers(): void {
+    this.showEmployeeDropdown = true;
+    let employees = [...this.allEmployees];
+    
+    // Apply role filter
+    if (this.memberRoleFilter) {
+      employees = employees.filter(emp => emp.role === this.memberRoleFilter);
+    }
+    
+    // Apply search filter
+    if (this.memberSearchTerm.trim()) {
+      const searchTerm = this.memberSearchTerm.toLowerCase();
+      employees = employees.filter(employee => 
+        employee.username.toLowerCase().includes(searchTerm) ||
+        employee.email.toLowerCase().includes(searchTerm) ||
+        employee.role.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Exclude already selected employees and selected manager
+    this.filteredEmployees = employees.filter(employee => 
+      !this.isEmployeeSelected(employee.id) && 
+      employee.id !== this.selectedManager?.id
+    );
+    
+    this.searchNoResults = this.filteredEmployees.length === 0;
+  }
+  
+  isEmployeeSelected(employeeId: number): boolean {
+    return this.selectedEmployeeIds.includes(employeeId);
+  }
+  
+  selectEmployee(employee: any): void {
+    if (!this.isEmployeeSelected(employee.id)) {
+      this.selectedEmployeeIds.push(employee.id);
+    }
+    this.memberSearchTerm = '';
+    this.showEmployeeDropdown = false;
+    this.isSearchingEmployees = false;
+    this.searchNoResults = false;
+    this.filteredEmployees = [...this.allEmployees];
+  }
+
+
+  
+
+  
+  removeEmployee(employeeId: number): void {
+    const index = this.selectedEmployeeIds.indexOf(employeeId);
+    if (index > -1) {
+      this.selectedEmployeeIds.splice(index, 1);
+    }
+  }
+  
+  getEmployeeName(employeeId: number): string {
+    const employee = this.allEmployees.find(emp => emp.id === employeeId);
+    return employee ? employee.username : 'Unknown';
+  }
+  
+  onCreateProject(): void {
+    console.log('Form valid:', this.createProjectForm.valid);
+    console.log('Form errors:', this.createProjectForm.errors);
+    console.log('Form values:', this.createProjectForm.value);
+    
+    if (this.createProjectForm.valid) {
+      const projectData = {
+        name: this.createProjectForm.get('name')?.value,
+        description: this.createProjectForm.get('description')?.value,
+        status: this.createProjectForm.get('status')?.value,
+        managerId: parseInt(this.createProjectForm.get('managerId')?.value),
+        memberIds: this.selectedEmployeeIds
+      };
+      
+      console.log('Creating project with data:', projectData);
+      
+      this.teamService.createProject(projectData).subscribe({
+        next: (response) => {
+          console.log('Project created successfully:', response);
+          alert(`Project "${projectData.name}" created successfully! Manager and ${this.selectedEmployeeIds.length} members have been assigned.`);
+          this.resetForm();
+          this.loadAllProjects();
+          // Navigate to the new project if created successfully
+          if (response && response.id) {
+            setTimeout(() => {
+              this.router.navigate(['/team', response.id]);
+            }, 1500);
+          }
+        },
+        error: (err) => {
+          console.error('Error creating project:', err);
+          alert('Error: ' + (err.error?.message || 'Failed to create project'));
+        }
+      });
+    } else {
+      console.log('Form is invalid');
+      Object.keys(this.createProjectForm.controls).forEach(key => {
+        const control = this.createProjectForm.get(key);
+        if (control && control.invalid) {
+          console.log(`${key} is invalid:`, control.errors);
+        }
+      });
+      alert('Please fill in all required fields');
+    }
+  }
+  
   toggleSidebar(): void {
     this.sidebarHidden = !this.sidebarHidden;
+  }
+  
+  navigateToCreateProject(): void {
+    this.router.navigate(['/create-project']);
+  }
+  
+  // Manager Selection Methods
+  filterManagers(): void {
+    this.showManagerDropdown = true;
+    if (!this.managerSearchTerm.trim()) {
+      this.filteredManagers = [...this.availableManagers];
+    } else {
+      const searchTerm = this.managerSearchTerm.toLowerCase();
+      this.filteredManagers = this.availableManagers.filter(manager => 
+        manager.username.toLowerCase().includes(searchTerm) ||
+        manager.email.toLowerCase().includes(searchTerm)
+      );
+    }
+  }
+  
+  toggleManagerDropdown(): void {
+    this.showManagerDropdown = !this.showManagerDropdown;
+  }
+  
+  selectManager(manager: any): void {
+    this.selectedManager = manager;
+    this.createProjectForm.patchValue({ managerId: manager.id });
+    this.managerSearchTerm = manager.username;
+    this.showManagerDropdown = false;
+  }
+  
+  removeManager(): void {
+    this.selectedManager = null;
+    this.createProjectForm.patchValue({ managerId: '' });
+    this.managerSearchTerm = '';
+  }
+  
+  // Enhanced Member Selection Methods
+  setMemberRoleFilter(role: string): void {
+    this.memberRoleFilter = role;
+    this.filterMembers();
+  }
+  
+  toggleEmployeeDropdown(): void {
+    this.showEmployeeDropdown = !this.showEmployeeDropdown;
+    if (this.showEmployeeDropdown) {
+      this.filterMembers();
+    }
+  }
+  
+  toggleEmployeeSelection(employee: any): void {
+    if (this.isEmployeeSelected(employee.id)) {
+      this.removeEmployee(employee.id);
+    } else {
+      this.selectEmployee(employee);
+    }
+  }
+  
+  getEmployeeById(id: number): any {
+    return this.allEmployees.find(emp => emp.id === id);
+  }
+  
+  clearAllMembers(): void {
+    this.selectedEmployeeIds = [];
+  }
+  
+  resetForm(): void {
+    this.createProjectForm.reset({
+      name: '',
+      description: '',
+      status: 'ACTIVE',
+      managerId: ''
+    });
+    this.selectedManager = null;
+    this.selectedEmployeeIds = [];
+    this.managerSearchTerm = '';
+    this.memberSearchTerm = '';
+    this.memberRoleFilter = '';
   }
 }

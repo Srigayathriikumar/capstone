@@ -2,6 +2,7 @@ package com.example.TeamResourceAccessManagement.dto;
 
 import jakarta.validation.constraints.*;
 import com.example.TeamResourceAccessManagement.domain.Project;
+import java.util.List;
 
 public class ProjectRequestDTO {
     
@@ -14,6 +15,10 @@ public class ProjectRequestDTO {
     
     @NotNull(message = "Project status is required")
     private Project.ProjectStatus status;
+    
+    private Long managerId;
+    
+    private List<Long> memberIds;
     
     // Constructors
     public ProjectRequestDTO() {}
@@ -33,4 +38,10 @@ public class ProjectRequestDTO {
     
     public Project.ProjectStatus getStatus() { return status; }
     public void setStatus(Project.ProjectStatus status) { this.status = status; }
+    
+    public Long getManagerId() { return managerId; }
+    public void setManagerId(Long managerId) { this.managerId = managerId; }
+    
+    public List<Long> getMemberIds() { return memberIds; }
+    public void setMemberIds(List<Long> memberIds) { this.memberIds = memberIds; }
 }

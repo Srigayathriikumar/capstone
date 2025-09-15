@@ -2,18 +2,21 @@
   min-height: 100vh;
   display: flex;
   background: #f8fafc;
+  position: relative;
 }
 
 .login-left {
-  flex: 1;
+  flex: 1.6;
   position: relative;
   overflow: hidden;
+  clip-path: polygon(0 0, 85% 0, 100% 100%, 0 100%);
 }
 
 .login-image {
   width: 100%;
   height: 100vh;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .image-overlay {
@@ -54,6 +57,19 @@
   justify-content: center;
   padding: 2rem;
   background: white;
+  position: relative;
+}
+
+.login-right::before {
+  content: '';
+  position: absolute;
+  left: -50px;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  transform: skewX(-15deg);
+  box-shadow: -10px 0 30px rgba(102, 126, 234, 0.2);
 }
 
 .login-form-container {
@@ -181,6 +197,7 @@
   
   .login-left {
     height: 40vh;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
   }
   
   .login-image {
@@ -197,5 +214,15 @@
   
   .login-right {
     padding: 1.5rem;
+  }
+  
+  .login-right::before {
+    left: 0;
+    top: -50px;
+    right: 0;
+    bottom: auto;
+    width: auto;
+    height: 100px;
+    transform: skewY(-15deg);
   }
 }

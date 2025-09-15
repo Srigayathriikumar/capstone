@@ -50,4 +50,7 @@ public interface UserService {
     void cleanupExpiredPermissions(Long userId);
     long getUserCount();
     long getActiveUserCount();
+    
+    // Search Operations
+    List<UserResponseDTO> searchUsers(String query);
 }

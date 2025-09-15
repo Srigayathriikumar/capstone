@@ -1,0 +1,222 @@
+<div class="create-project-container">
+  <div class="content-layout">
+    <!-- Left Side - Create Project Form -->
+    <div class="form-section-wrapper">
+      <div class="header">
+        <h1><i class="pi pi-plus-circle"></i> Create New Project</h1>
+        <p>Set up a new project and assign team members</p>
+      </div>
+
+      <div class="form-container">
+        <form [formGroup]="createProjectForm" (ngSubmit)="onCreateProject()" class="project-form">
+      <!-- Project Information Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <h4><i class="pi pi-info-circle"></i> Project Information</h4>
+        </div>
+        
+        <div class="form-group">
+          <label for="projectName">Project Name *</label>
+          <input type="text" 
+                 id="projectName" 
+                 formControlName="name" 
+                 class="form-control" 
+                 placeholder="Enter project name"
+                 maxlength="100">
+        </div>
+        
+        <div class="form-group">
+          <label for="projectDescription">Project Description *</label>
+          <textarea id="projectDescription" 
+                    formControlName="description" 
+                    class="form-control" 
+                    rows="4" 
+                    placeholder="Describe the project goals and objectives"
+                    maxlength="500"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="projectStatus">Project Status *</label>
+          <select id="projectStatus" formControlName="status" class="form-control">
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+            <option value="COMPLETED">Completed</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Team Members Section -->
+      <div class="form-section">
+        <div class="section-header">
+          <h4><i class="pi pi-users"></i> Team Members</h4>
+          <span class="member-count">{{ selectedMemberIds.length }} selected</span>
+        </div>
+        
+        <div class="form-group">
+          <label>Select Team Members</label>
+          <div class="members-dropdown-wrapper">
+            <div class="search-input-container">
+              <input type="text" 
+                     [(ngModel)]="memberSearchTerm" 
+                     (input)="filterMembers()" 
+                     (focus)="showMembersDropdown = true"
+                     placeholder="🔍 Search team members..."
+                     class="members-search-input"
+                     [ngModelOptions]="{standalone: true}"
+                     autocomplete="off">
+              <div class="search-icon">
+                <i class="pi pi-search"></i>
+              </div>
+              <button type="button" 
+                      class="dropdown-arrow" 
+                      (click)="toggleMembersDropdown()"
+                      [class.active]="showMembersDropdown">
+                <i class="pi" [class.pi-chevron-down]="!showMembersDropdown" [class.pi-chevron-up]="showMembersDropdown"></i>
+              </button>
+            </div>
+            
+            <div class="members-dropdown" *ngIf="showMembersDropdown">
+              <div class="dropdown-header">
+                <i class="pi pi-users"></i>
+                <span>Available Team Members</span>
+                <span class="count-badge">{{ filteredMembers.length }}</span>
+              </div>
+              
+              <div class="dropdown-content">
+                <div class="member-option" 
+                     *ngFor="let member of filteredMembers" 
+                     (click)="toggleMemberSelection(member)"
+                     [class.selected]="isMemberSelected(member.id)">
+                  <div class="member-avatar">
+                    {{ member.username.charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="member-info">
+                    <div class="member-name">{{ member.username }}</div>
+                    <div class="member-email">{{ member.email }}</div>
+                    <div class="member-role-badge">{{ member.role }}</div>
+                  </div>
+                  <div class="selection-indicator" *ngIf="isMemberSelected(member.id)">
+                    <i class="pi pi-check"></i>
+                  </div>
+                </div>
+                
+                <div class="no-members" *ngIf="filteredMembers.length === 0">
+                  <div class="no-results-icon">
+                    <i class="pi pi-search"></i>
+                  </div>
+                  <div class="no-results-text">
+                    <h4>No members found</h4>
+                    <p>Try adjusting your search terms</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="selected-members" *ngIf="selectedMemberIds.length > 0">
+            <div class="members-header">
+              <h5>Selected Team Members ({{ selectedMemberIds.length }})</h5>
+              <button type="button" class="clear-all-btn" (click)="clearAllMembers()">
+                <i class="pi pi-trash"></i> Clear All
+              </button>
+            </div>
+            <div class="members-list">
+              <div class="member-tag" *ngFor="let memberId of selectedMemberIds">
+                <div class="member-avatar">
+                  {{ getMemberById(memberId)?.username.charAt(0).toUpperCase() }}
+                </div>
+                <span class="member-name">{{ getMemberById(memberId)?.username }}</span>
+                <button type="button" class="remove-member-btn" (click)="removeMember(memberId)">
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <div class="action-buttons">
+          <button type="button" class="btn btn-secondary" (click)="resetForm()">
+            <i class="pi pi-refresh"></i> Reset
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="goBack()">
+            <i class="pi pi-times"></i> Cancel
+          </button>
+          <button type="submit" 
+                  class="btn btn-primary" 
+                  [disabled]="createProjectForm.invalid">
+            <i class="pi pi-check"></i> Create Project
+          </button>
+        </div>
+      </div>
+    </form>
+      </div>
+    </div>
+
+    <!-- Right Side - Projects Overview -->
+    <div class="projects-overview">
+      <div class="overview-header">
+        <h2><i class="pi pi-folder"></i> Projects Overview</h2>
+        <p>Manage and monitor your team projects</p>
+      </div>
+
+      <div class="stats-cards">
+        <div class="stat-card active">
+          <div class="stat-icon">
+            <i class="pi pi-check-circle"></i>
+          </div>
+          <div class="stat-info">
+            <h3>{{ getActiveProjectsCount() }}</h3>
+            <p>Active Projects</p>
+          </div>
+        </div>
+        
+        <div class="stat-card completed">
+          <div class="stat-icon">
+            <i class="pi pi-flag"></i>
+          </div>
+          <div class="stat-info">
+            <h3>{{ getCompletedProjectsCount() }}</h3>
+            <p>Completed</p>
+          </div>
+        </div>
+        
+        <div class="stat-card total">
+          <div class="stat-icon">
+            <i class="pi pi-chart-bar"></i>
+          </div>
+          <div class="stat-info">
+            <h3>{{ getTotalProjectsCount() }}</h3>
+            <p>Total Projects</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="recent-projects">
+        <h3>Recent Projects</h3>
+        <div class="projects-list">
+          <div class="project-card" *ngFor="let project of getRecentProjects()">
+            <div class="project-header">
+              <h4>{{ project.name }}</h4>
+              <span class="project-status" [class]="getStatusClass(project.status)">{{ project.status }}</span>
+            </div>
+            <p class="project-description">{{ project.description }}</p>
+            <div class="project-meta">
+              <span class="project-manager"><i class="pi pi-user"></i> {{ project.managerName }}</span>
+              <span class="project-members"><i class="pi pi-users"></i> {{ project.memberCount }} members</span>
+            </div>
+          </div>
+          
+          <div class="empty-projects" *ngIf="getRecentProjects().length === 0">
+            <i class="pi pi-folder-open"></i>
+            <p>No projects created yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-toast></app-toast>

@@ -14,12 +14,17 @@ export class NavbarComponent {
   @Input() currentUser: any = null;
   @Input() showSearch = true;
   @Input() searchPlaceholder = 'Type here...';
+  @Input() showProjectSwitcher = false;
+  @Input() currentProject: any = null;
+  @Input() allProjects: any[] = [];
   @Output() search = new EventEmitter<string>();
   @Output() toggleSidebar = new EventEmitter<void>();
   @Output() logout = new EventEmitter<void>();
   @Output() userMenuClick = new EventEmitter<void>();
+  @Output() projectSelected = new EventEmitter<any>();
 
   searchTerm = '';
+  showProjectSwitcherModal = false;
 
   onSearch(): void {
     this.search.emit(this.searchTerm);
@@ -35,5 +40,22 @@ export class NavbarComponent {
 
   onUserMenuClick(): void {
     this.userMenuClick.emit();
+  }
+
+  toggleProjectSwitcher(): void {
+    this.showProjectSwitcherModal = !this.showProjectSwitcherModal;
+  }
+
+  closeProjectSwitcher(): void {
+    this.showProjectSwitcherModal = false;
+  }
+
+  selectProject(project: any): void {
+    this.projectSelected.emit(project);
+    this.closeProjectSwitcher();
+  }
+
+  getStatusClass(status: string): string {
+    return status?.toLowerCase() || 'inactive';
   }
 }

@@ -1,125 +1,223 @@
-.resources-overview {
-  padding: 2rem 0;
-}
-
-.resource-type-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.resource-type-card {
-  background: var(--white);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--border-radius-lg);
-  padding: 2rem;
-  text-align: center;
+/* My Uploads Resource Cards - Consistent Sizing */
+.uploads-grid .resource-card.upload {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
+  max-width: 320px;
+  width: 100%;
 }
 
-.resource-type-card:hover {
+.uploads-grid .resource-card.upload:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #1976d2;
 }
 
-.resource-type-card:first-child {
-  border-left: 4px solid var(--primary-blue);
+.uploads-grid .resource-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
 }
 
-.resource-type-card:last-child {
-  border-left: 4px solid var(--warning);
-}
-
-.card-header {
-  margin-bottom: 1.5rem;
-}
-
-.card-header h3 {
+.uploads-grid .resource-title-section {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-  font-size: 1.5rem;
-  color: var(--gray-800);
+  gap: 8px;
+  flex: 1;
 }
 
-.card-header h3 i {
-  font-size: 1.75rem;
-}
-
-.resource-type-card:first-child .card-header h3 i {
-  color: var(--primary-blue);
-}
-
-.resource-type-card:last-child .card-header h3 i {
-  color: var(--warning);
-}
-
-.card-header p {
-  color: var(--gray-600);
-  font-size: 0.95rem;
-  margin: 0;
-}
-
-.card-stats {
-  margin-bottom: 2rem;
-}
-
-.resource-count {
-  display: inline-block;
-  background: var(--gray-50);
-  color: var(--gray-700);
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--border-radius);
-  font-size: 1.125rem;
+.uploads-grid .resource-title-section h4 {
+  font-size: 16px;
   font-weight: 600;
-  border: 1px solid var(--gray-200);
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.3;
 }
 
-.card-actions {
+.uploads-grid .file-icon {
+  font-size: 18px;
+  color: #1976d2;
+  flex-shrink: 0;
+}
+
+.uploads-grid .resource-tags {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
 }
 
-.card-actions .btn {
-  padding: 0.875rem 2rem;
-  font-size: 1rem;
+.uploads-grid .resource-type,
+.uploads-grid .resource-category {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
   font-weight: 500;
-  min-width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.uploads-grid .resource-type {
+  background: #eff6ff;
+  color: #1976d2;
+  border: 1px solid #bfdbfe;
+}
+
+.uploads-grid .resource-category {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.uploads-grid .access-type-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.uploads-grid .access-type-badge.common {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fcd34d;
+}
+
+.uploads-grid .access-type-badge.manager {
+  background: #fce7f3;
+  color: #be185d;
+  border: 1px solid #f9a8d4;
+}
+
+.uploads-grid .resource-description {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin: 8px 0 12px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.uploads-grid .resource-metadata {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.uploads-grid .metadata-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.uploads-grid .metadata-item:last-child {
+  margin-bottom: 0;
+}
+
+.uploads-grid .metadata-label {
+  font-weight: 500;
+  color: #374151;
+  min-width: 60px;
+}
+
+.uploads-grid .resource-link {
+  color: #1976d2;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.uploads-grid .resource-link:hover {
+  text-decoration: underline;
+}
+
+.uploads-grid .resource-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.uploads-grid .btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.card-actions .btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+.uploads-grid .btn-sm {
+  padding: 4px 8px;
+  font-size: 11px;
 }
 
-/* Responsive design */
+.uploads-grid .btn-primary {
+  background: #1976d2;
+  color: white;
+}
+
+.uploads-grid .btn-primary:hover {
+  background: #1565c0;
+}
+
+.uploads-grid .btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.uploads-grid .btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+.uploads-grid .btn-info {
+  background: #0ea5e9;
+  color: white;
+}
+
+.uploads-grid .btn-info:hover {
+  background: #0284c7;
+}
+
+.uploads-grid .btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.uploads-grid .btn-warning:hover {
+  background: #d97706;
+}
+
+/* Grid Layout for Uploads - Square and Spacious */
+.uploads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 320px);
+  gap: 24px;
+  padding: 24px;
+  justify-content: start;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .resource-type-cards {
+  .uploads-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
   }
   
-  .resource-type-card {
-    padding: 1.5rem;
-  }
-  
-  .card-header h3 {
-    font-size: 1.25rem;
-  }
-  
-  .card-actions .btn {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.9rem;
-    min-width: 120px;
+  .uploads-grid .resource-card.upload {
+    max-width: none;
   }
 }

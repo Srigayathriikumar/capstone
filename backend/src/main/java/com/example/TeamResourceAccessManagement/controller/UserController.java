@@ -142,4 +142,22 @@ public class UserController {
         userService.cleanupExpiredPermissions(userId);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/managers")
+    public ResponseEntity<List<UserResponseDTO>> getAllManagers() {
+        List<UserResponseDTO> managers = userService.getUsersByRole(User.UserRole.PROJECT_MANAGER);
+        return ResponseEntity.ok(managers);
+    }
+
+    @GetMapping("/employees")
+    public ResponseEntity<List<UserResponseDTO>> getAllEmployees() {
+        List<UserResponseDTO> employees = userService.getAllUsers();
+        return ResponseEntity.ok(employees);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserResponseDTO>> searchUsers(@RequestParam String query) {
+        List<UserResponseDTO> users = userService.searchUsers(query);
+        return ResponseEntity.ok(users);
+    }
 }

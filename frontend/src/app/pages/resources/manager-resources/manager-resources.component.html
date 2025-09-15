@@ -9,11 +9,11 @@
       <img src="logo.png" alt="TRAM Logo" class="navbar-logo">
       <span class="navbar-title">TRAM Dashboard</span>
       <div class="project-switcher-nav">
-        <select (change)="switchProject($event)" [value]="teamId" class="project-select-nav">
-          <option *ngFor="let project of allProjects" [value]="project.id">
-            {{ project.name }}
-          </option>
-        </select>
+        <button class="project-switcher-btn" (click)="toggleProjectSwitcher()">
+          <i class="pi pi-th-large"></i>
+          <span>{{ team?.name || 'Select Project' }}</span>
+          <i class="pi pi-angle-down"></i>
+        </button>
       </div>
     </div>
     <div class="navbar-right">
@@ -35,34 +35,19 @@
   <!-- Content wrapper for sidebar and main content -->
   <div class="content-wrapper">
     <!-- Sidebar Navigation -->
-    <aside class="sidebar" [class.hidden]="sidebarHidden">
-      <div class="sidebar-header">
-        <div class="team-info">
-          <div class="team-header-row">
-            <h2>{{ team?.name }}</h2>
-          </div>
-          <div class="status-container">
-            <select 
-              *ngIf="isManagerOrAdmin()" 
-              class="status-dropdown-sidebar" 
-              [value]="team?.status" 
-              (change)="updateTeamStatus(team?.id, $event)"
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="ARCHIVED">ARCHIVED</option>
-            </select>
-            <span 
-              *ngIf="!isManagerOrAdmin()" 
-              class="team-status" 
-              [class]="getStatusClass(team?.status || '')"
-            >
-              {{ team?.status }}
-            </span>
-          </div>
+    <aside class="sidebar" [class.hidden]="sidebarHidden" [class.collapsed]="sidebarHidden">
+    <div class="sidebar-header">
+      <div class="team-info">
+        <div class="team-header-row">
+          <h2>{{ team?.name }}</h2>
+        </div>
+        <div class="status-container">
+          <span class="team-status" [class]="getStatusClass(team?.status || '')">
+            {{ team?.status }}
+          </span>
         </div>
       </div>
+    </div>
       
       <nav class="sidebar-nav">
         <button class="nav-item" (click)="setActiveTab('overview')">
@@ -85,7 +70,7 @@
             </button>
             <button class="nav-subitem active">
               <i class="pi pi-lock"></i>
-              <span>Manager Controlled</span>
+              <span>Controlled Resources</span>
             </button>
           </div>
         </div>
@@ -97,7 +82,19 @@
           <i class="pi pi-upload"></i>
           <span>My Uploads</span>
         </button>
-        <button class="nav-item" (click)="setActiveTab('audit')" *ngIf="isManagerOrAdmin()">
+        <button 
+          *ngIf="isManagerOrAdmin()"
+          class="nav-item"
+          (click)="setActiveTab('create-project')"
+        >
+          <i class="pi pi-plus"></i>
+          <span>Create Project</span>
+        </button>
+        <button 
+          *ngIf="isManagerOrAdmin()"
+          class="nav-item"
+          (click)="setActiveTab('audit')"
+        >
           <i class="pi pi-chart-line"></i>
           <span>Audit Log</span>
         </button>
@@ -108,7 +105,7 @@
     <div class="main-content" [class.expanded]="sidebarHidden">
       <header class="content-header">
         <div class="header-left">
-          <h1>Manager Controlled Resources</h1>
+          <h1>Controlled Resources</h1>
           <p>Resources requiring approval for access ({{ resources.length }} resources)</p>
         </div>
         <div class="header-actions">
@@ -283,8 +280,33 @@
   <div class="loading" *ngIf="loading">Loading resources...</div>
     <div class="empty-state" *ngIf="!loading && paginatedResources.length === 0">
       <h3>No resources found</h3>
-      <p>No manager controlled resources match your current filters.</p>
+      <p>No controlled resources match your current filters.</p>
     </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Project Switcher Modal -->
+<div class="project-switcher-overlay" *ngIf="showProjectSwitcher" (click)="closeProjectSwitcher()">
+  <div class="project-switcher-modal" (click)="$event.stopPropagation()">
+    <div class="switcher-header">
+      <h3>Switch Project</h3>
+      <button class="close-switcher" (click)="closeProjectSwitcher()">×</button>
+    </div>
+    <div class="projects-grid">
+      <div class="project-card" 
+           *ngFor="let project of allProjects" 
+           [class.current]="project.id === teamId"
+           (click)="selectProject(project.id)">
+        <div class="project-icon">
+          <i class="pi pi-folder"></i>
+        </div>
+        <div class="project-info">
+          <h4>{{ project.name }}</h4>
+          <p>{{ project.description }}</p>
+        </div>
+        <div class="project-status" [class]="getStatusClass(project.status)">{{ project.status }}</div>
       </div>
     </div>
   </div>
@@ -294,7 +316,7 @@
 <div class="modal-overlay" *ngIf="showAddResourceModal" (click)="closeAddResourceModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Add Manager Controlled Resource</h3>
+      <h3>Add Controlled Resource</h3>
       <button class="close-btn" (click)="closeAddResourceModal()">×</button>
     </div>
     
@@ -312,9 +334,10 @@
       <div class="form-row">
         <div class="form-group">
           <label>Type *</label>
-          <select formControlName="type" class="form-control">
-            <option value="DATABASE">Database</option>
-            <option value="API">API</option>
+          <div class="select-wrapper">
+            <select formControlName="type" class="form-control">
+              <option value="DATABASE">Database</option>
+              <option value="API">API</option>
             <option value="REST_API">REST API</option>
             <option value="GRAPHQL_API">GraphQL API</option>
             <option value="SERVICE">Service</option>
@@ -355,12 +378,14 @@
             <option value="GOOGLE_DRIVE">Google Drive</option>
             <option value="DROPBOX">Dropbox</option>
             <option value="OTHER">Other</option>
-          </select>
+            </select>
+          </div>
         </div>
         
         <div class="form-group">
           <label>Category *</label>
-          <select formControlName="category" class="form-control">
+          <div class="select-wrapper">
+            <select formControlName="category" class="form-control">
             <option value="DATABASE">Database Resources</option>
             <option value="API">API Resources</option>
             <option value="DOCUMENTATION">Documentation</option>
@@ -375,7 +400,8 @@
             <option value="CODE_FILES">Code Files</option>
             <option value="MEDIA">Media Files</option>
             <option value="OTHER">Other Resources</option>
-          </select>
+            </select>
+          </div>
         </div>
       </div>
       
@@ -400,12 +426,14 @@
       
       <div class="form-group">
         <label for="allowedUserGroups">Allowed User Groups</label>
-        <select id="allowedUserGroups" formControlName="allowedUserGroups" class="form-control">
-          <option value="">Select user groups (optional)</option>
-          <option value="dev">dev</option>
-          <option value="test">test</option>
-          <option value="QA">QA</option>
-        </select>
+        <div class="select-wrapper">
+          <select id="allowedUserGroups" formControlName="allowedUserGroups" class="form-control">
+            <option value="">Select user groups (optional)</option>
+            <option value="dev">dev</option>
+            <option value="test">test</option>
+            <option value="QA">QA</option>
+          </select>
+        </div>
         <div class="form-help">Select user groups that can access this resource automatically. Leave empty for manager approval required.</div>
       </div>
       

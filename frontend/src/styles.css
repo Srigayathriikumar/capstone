@@ -69,6 +69,29 @@
   --transition: all 0.15s ease-in-out;
   --transition-fast: all 0.1s ease-in-out;
   --transition-slow: all 0.3s ease-in-out;
+  --transition-normal: all 0.2s ease-in-out;
+  
+  /* Layout Variables for Navbar & Sidebar */
+  --surface-0: #ffffff;
+  --surface-50: #f8fafc;
+  --surface-100: #f1f5f9;
+  --border-light: #e2e8f0;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --text-white: #ffffff;
+  --primary-color: #1976d2;
+  --primary-gradient: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  --accent-green: #10b981;
+  --accent-orange: #f59e0b;
+  --accent-red: #ef4444;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --z-sticky: 100;
+  --z-fixed: 1000;
+  --radius-full: 9999px;
 }
 
 /* Base Styles */

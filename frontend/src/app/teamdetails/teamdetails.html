@@ -9,14 +9,15 @@
       <img src="logo.png" alt="TRAM Logo" class="navbar-logo">
       <span class="navbar-title">TRAM Dashboard</span>
       <div class="project-switcher-nav">
-        <select (change)="switchProject($event)" [value]="teamId" class="project-select-nav">
-          <option *ngFor="let project of allProjects" [value]="project.id">
-            {{ project.name }}
-          </option>
-        </select>
+        <button class="project-switcher-btn" (click)="toggleProjectSwitcher()">
+          <i class="pi pi-th-large"></i>
+          <span>{{ team?.name || 'Select Project' }}</span>
+          <i class="pi pi-angle-down"></i>
+        </button>
       </div>
     </div>
     <div class="navbar-right">
+
       <button class="nav-btn" title="User Details">
         <i class="pi pi-user"></i>
         <span>{{ currentUsername }}</span>
@@ -60,26 +61,15 @@
     <aside class="sidebar" [class.hidden]="sidebarHidden" [class.collapsed]="sidebarHidden">
     <div class="sidebar-header">
       <div class="team-info">
+        <div class="team-icon" [class]="getStatusClass(team?.status || '')">
+          {{ (team?.name || 'T').charAt(0).toUpperCase() }}
+        </div>
+        <div class="team-status-mini" [class]="getStatusClass(team?.status || '')"></div>
         <div class="team-header-row">
           <h2>{{ team?.name }}</h2>
         </div>
         <div class="status-container">
-          <select 
-            *ngIf="isManagerOrAdmin()" 
-            class="status-dropdown-sidebar" 
-            [value]="team?.status" 
-            (change)="updateTeamStatus(team?.id, $event)"
-          >
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="ARCHIVED">ARCHIVED</option>
-          </select>
-          <span 
-            *ngIf="!isManagerOrAdmin()" 
-            class="team-status" 
-            [class]="getStatusClass(team?.status || '')"
-          >
+          <span class="team-status" [class]="getStatusClass(team?.status || '')">
             {{ team?.status }}
           </span>
         </div>
@@ -93,6 +83,7 @@
         class="nav-item"
         [class.active]="activeTab === 'overview'"
         (click)="setActiveTab('overview')"
+        data-tooltip="Overview"
       >
         <i class="pi pi-home"></i>
         <span>Overview</span>
@@ -101,6 +92,7 @@
         class="nav-item"
         [class.active]="activeTab === 'members'"
         (click)="setActiveTab('members')"
+        data-tooltip="Members"
       >
         <i class="pi pi-users"></i>
         <span>Members</span>
@@ -111,13 +103,13 @@
           <span>Resources</span>
         </div>
         <div class="nav-subitems">
-          <button class="nav-subitem" (click)="navigateToCommonResources()">
+          <button class="nav-subitem" (click)="navigateToCommonResources()" data-tooltip="Common Resources">
             <i class="pi pi-users"></i>
             <span>Common Resources</span>
           </button>
-          <button class="nav-subitem" (click)="navigateToManagerResources()">
+          <button class="nav-subitem" (click)="navigateToManagerResources()" data-tooltip="Controlled Resources">
             <i class="pi pi-lock"></i>
-            <span>Manager Controlled</span>
+            <span>Controlled Resources</span>
           </button>
         </div>
       </div>
@@ -125,6 +117,7 @@
         class="nav-item"
         [class.active]="activeTab === 'requests'"
         (click)="setActiveTab('requests')"
+        data-tooltip="Access Requests"
       >
         <i class="pi pi-key"></i>
         <span>Access Requests</span>
@@ -133,6 +126,7 @@
         class="nav-item"
         [class.active]="activeTab === 'uploads'"
         (click)="setActiveTab('uploads')"
+        data-tooltip="My Uploads"
       >
         <i class="pi pi-upload"></i>
         <span>My Uploads</span>
@@ -140,8 +134,19 @@
       <button 
         *ngIf="isManagerOrAdmin()"
         class="nav-item"
+        [class.active]="activeTab === 'create-project'"
+        (click)="setActiveTab('create-project')"
+        data-tooltip="Create Project"
+      >
+        <i class="pi pi-plus"></i>
+        <span>Create Project</span>
+      </button>
+      <button 
+        *ngIf="isManagerOrAdmin()"
+        class="nav-item"
         [class.active]="activeTab === 'audit'"
         (click)="setActiveTab('audit')"
+        data-tooltip="Audit Log"
       >
         <i class="pi pi-chart-line"></i>
         <span>Audit Log</span>
@@ -167,22 +172,45 @@
     <!-- Overview Tab -->
     <div class="tab-panel" *ngIf="activeTab === 'overview'" [class.manager-overview]="isManagerOrAdmin()" [class.user-overview]="!isManagerOrAdmin()">
       <div class="overview-grid" [class.manager-grid]="isManagerOrAdmin()" [class.user-grid]="!isManagerOrAdmin()">
-        <!-- Manager View -->
-        <div class="overview-card" *ngIf="isManagerOrAdmin()">
-          <h3>Project Manager</h3>
-          <div class="manager-info" *ngIf="manager; else noManager">
-            <div class="manager-avatar">
-              {{ manager.username.charAt(0).toUpperCase() }}
+        <!-- Manager View: Project Status Management -->
+        <div class="overview-card status-card" *ngIf="isManagerOrAdmin()">
+          <h3><i class="pi pi-cog"></i> Project Status</h3>
+          <div class="status-management">
+            <div class="current-status">
+              <span class="status-label">Current Status:</span>
+              <span class="team-status" [class]="getStatusClass(team?.status || '')">{{ team?.status }}</span>
             </div>
-            <div class="manager-details">
-              <h4>{{ manager.username }}</h4>
-              <p>{{ manager.email }}</p>
-              <span class="manager-role">{{ manager.role }}</span>
+            <div class="status-options">
+              <div class="status-chip" 
+                   [class.active]="team?.status === 'ACTIVE'"
+                   (click)="updateTeamStatus(team?.id, {target: {value: 'ACTIVE'}})">
+                <span class="status-text">ACTIVE</span>
+                <div class="status-indicator"></div>
+              </div>
+              <div class="status-chip" 
+                   [class.active]="team?.status === 'INACTIVE'"
+                   (click)="updateTeamStatus(team?.id, {target: {value: 'INACTIVE'}})">
+                <span class="status-text">INACTIVE</span>
+                <div class="status-indicator"></div>
+              </div>
+              <div class="status-chip" 
+                   [class.active]="team?.status === 'COMPLETED'"
+                   (click)="updateTeamStatus(team?.id, {target: {value: 'COMPLETED'}})">
+                <span class="status-text">COMPLETED</span>
+                <div class="status-indicator"></div>
+              </div>
+              <div class="status-chip" 
+                   [class.active]="team?.status === 'ARCHIVED'"
+                   (click)="updateTeamStatus(team?.id, {target: {value: 'ARCHIVED'}})">
+                <span class="status-text">ARCHIVED</span>
+                <div class="status-indicator"></div>
+              </div>
+            </div>
+            <div class="status-info">
+              <p><i class="pi pi-info-circle"></i> Last updated: {{ team?.updatedAt | date:'short' || 'Never' }}</p>
+              <p><i class="pi pi-user"></i> Updated by: {{ currentUsername }}</p>
             </div>
           </div>
-          <ng-template #noManager>
-            <p>No project manager assigned</p>
-          </ng-template>
         </div>
         
         <div class="overview-card" *ngIf="isManagerOrAdmin()">
@@ -545,9 +573,11 @@
     <!-- My Uploads Tab -->
     <div class="tab-panel" *ngIf="activeTab === 'uploads'">
       <div class="uploads-section">
-        <div class="section-header">
-          <h3>📁 My Uploads</h3>
-          <p class="section-description">Resources you have uploaded to this team</p>
+        <div class="uploads-header">
+          <div class="header-content">
+            <h3><i class="pi pi-folder" style="color: white;"></i> My Uploads</h3>
+            <p class="section-description">Resources you have uploaded to this team</p>
+          </div>
         </div>
         
         <div class="uploads-grid">
@@ -561,7 +591,7 @@
                 <span class="resource-type">{{ resource.type }}</span>
                 <span class="resource-category">{{ resource.category || 'OTHER' }}</span>
                 <span class="access-type-badge" [class]="resource.accessType === 'COMMON' ? 'common' : 'manager'">
-                  {{ resource.accessType === 'COMMON' ? 'Common Access' : 'Manager Controlled' }}
+                  {{ resource.accessType === 'COMMON' ? 'Common Access' : 'Controlled' }}
                 </span>
               </div>
             </div>
@@ -622,7 +652,7 @@
     <div class="tab-panel" *ngIf="activeTab === 'manager-resources'">
       <div class="resources-content">
         <div class="resources-header">
-          <h3><i class="pi pi-lock"></i> Manager Controlled Resources</h3>
+          <h3><i class="pi pi-lock"></i> Controlled Resources</h3>
           <p>Resources requiring approval for access ({{ managerResources.length }} resources)</p>
           <button class="btn btn-primary" *ngIf="isManagerOrAdmin()" (click)="openAddResourceModal('MANAGER_CONTROLLED')">
             <i class="pi pi-plus"></i> Add Resource
@@ -646,10 +676,15 @@
           </div>
         </div>
         <div class="empty-state" *ngIf="managerResources.length === 0">
-          <h3>No manager controlled resources</h3>
-          <p>No manager controlled resources have been added yet.</p>
+          <h3>No controlled resources</h3>
+          <p>No controlled resources have been added yet.</p>
         </div>
       </div>
+    </div>
+
+    <!-- Create Project Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'create-project'">
+      <app-create-project></app-create-project>
     </div>
 
     <!-- Audit Log Tab -->
@@ -873,7 +908,7 @@
   <div class="modal-overlay" *ngIf="showAddResourceModal" (click)="closeAddResourceModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Add {{ selectedAccessType === 'COMMON' ? 'Common' : 'Manager Controlled' }} Resource</h3>
+        <h3>Add {{ selectedAccessType === 'COMMON' ? 'Common' : 'Controlled' }} Resource</h3>
         <button class="close-btn" (click)="closeAddResourceModal()">×</button>
       </div>
       
@@ -1218,6 +1253,138 @@
     </div>
   </div>
 
+  <!-- Create Project Modal -->
+  <div class="modal-overlay" *ngIf="showCreateProjectModal" (click)="closeCreateProjectModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="pi pi-plus"></i> Create New Project</h3>
+        <button class="close-btn" (click)="closeCreateProjectModal()">×</button>
+      </div>
+      
+      <form [formGroup]="createProjectForm" (ngSubmit)="onCreateProject()">
+        <div class="form-group">
+          <label for="projectName">Project Name *</label>
+          <input type="text" id="projectName" formControlName="name" class="form-control" placeholder="Enter project name">
+        </div>
+        
+        <div class="form-group">
+          <label for="projectDescription">Description *</label>
+          <textarea id="projectDescription" formControlName="description" class="form-control" rows="3" placeholder="Describe the project"></textarea>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="projectStatus">Status *</label>
+            <select id="projectStatus" formControlName="status" class="form-control">
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="projectManager">Project Manager *</label>
+            <select id="projectManager" formControlName="managerId" class="form-control">
+              <option value="">Select Manager</option>
+              <option *ngFor="let manager of availableManagers" [value]="manager.id">
+                {{ manager.username }} ({{ manager.email }})
+              </option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="teamMembers">Team Members</label>
+          <div class="employee-dropdown-container" (click)="$event.stopPropagation()">
+            <div class="dropdown-search">
+              <input type="text" 
+                     [(ngModel)]="memberSearchTerm" 
+                     (input)="filterMembers()" 
+                     (focus)="showEmployeeDropdown = true"
+                     placeholder="🔍 Search employees by name, email, or role..." 
+                     class="form-control dropdown-input" 
+                     [ngModelOptions]="{standalone: true}"
+                     autocomplete="off">
+              <button type="button" class="dropdown-arrow" (click)="toggleEmployeeDropdown()">
+                <i class="pi" [class.pi-chevron-down]="!showEmployeeDropdown" [class.pi-chevron-up]="showEmployeeDropdown"></i>
+              </button>
+            </div>
+            
+            <div class="employee-dropdown" *ngIf="showEmployeeDropdown">
+              <!-- Loading state -->
+              <div class="employee-option" *ngIf="isSearchingEmployees" style="pointer-events: none; opacity: 0.7;">
+                <div class="employee-avatar" style="background: #e5e7eb; color: #9ca3af;">
+                  <i class="pi pi-spin pi-spinner"></i>
+                </div>
+                <div class="employee-info">
+                  <div class="employee-name">Searching employees...</div>
+                  <div class="employee-email">Please wait</div>
+                </div>
+              </div>
+              
+              <!-- No results state -->
+              <div class="employee-option" *ngIf="!isSearchingEmployees && searchNoResults" style="pointer-events: none; opacity: 0.7;">
+                <div class="employee-avatar" style="background: #fef3c7; color: #d97706;">
+                  <i class="pi pi-search"></i>
+                </div>
+                <div class="employee-info">
+                  <div class="employee-name">No employees found</div>
+                  <div class="employee-email">Try a different search term</div>
+                </div>
+              </div>
+              
+              <!-- Empty state when no search term -->
+              <div class="employee-option" *ngIf="!isSearchingEmployees && !searchNoResults && filteredEmployees.length === 0 && !memberSearchTerm.trim()" style="pointer-events: none; opacity: 0.7;">
+                <div class="employee-avatar" style="background: #f3f4f6; color: #6b7280;">
+                  <i class="pi pi-users"></i>
+                </div>
+                <div class="employee-info">
+                  <div class="employee-name">Start typing to search</div>
+                  <div class="employee-email">Search by name, email, or role</div>
+                </div>
+              </div>
+              
+              <!-- Employee results -->
+              <div class="employee-option" 
+                   *ngFor="let employee of filteredEmployees" 
+                   (click)="selectEmployee(employee)"
+                   [class.selected]="isEmployeeSelected(employee.id)">
+                <div class="employee-avatar">
+                  {{ employee.username.charAt(0).toUpperCase() }}
+                </div>
+                <div class="employee-info">
+                  <div class="employee-name">{{ employee.username }}</div>
+                  <div class="employee-email">{{ employee.email }}</div>
+                  <div class="employee-role">{{ employee.role }}</div>
+                </div>
+                <i class="pi pi-check check-icon" *ngIf="isEmployeeSelected(employee.id)"></i>
+              </div>
+            </div>
+            
+            <div class="selected-employees" *ngIf="selectedEmployeeIds.length > 0">
+              <div class="selected-count">{{ selectedEmployeeIds.length }} member(s) selected</div>
+              <div class="selected-tags">
+                <span class="employee-tag" *ngFor="let employeeId of selectedEmployeeIds">
+                  {{ getEmployeeName(employeeId) }}
+                  <button type="button" (click)="removeEmployee(employeeId)" class="remove-tag-btn">×</button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeCreateProjectModal()">
+            <i class="pi pi-times"></i> Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="createProjectForm.invalid">
+            <i class="pi pi-check"></i> Create Project
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Edit Access Modal -->
   <div class="modal-overlay" *ngIf="showEditAccessModal" (click)="closeEditAccessModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
@@ -1230,14 +1397,14 @@
         <div class="resource-info" *ngIf="selectedResource">
           <p><strong>Resource:</strong> {{ selectedResource.name }}</p>
           <p><strong>Type:</strong> {{ selectedResource.type }}</p>
-          <p><strong>Current Access:</strong> {{ selectedResource.accessType === 'COMMON' ? 'Common (All team members)' : 'Manager Controlled' }}</p>
+          <p><strong>Current Access:</strong> {{ selectedResource.accessType === 'COMMON' ? 'Common (All team members)' : 'Controlled' }}</p>
         </div>
         
         <div class="form-group">
           <label for="editAccessType">Access Type *</label>
           <select id="editAccessType" formControlName="accessType" class="form-control">
             <option value="COMMON">Common (All team members can access)</option>
-            <option value="MANAGER_CONTROLLED">Manager Controlled (Requires approval)</option>
+            <option value="MANAGER_CONTROLLED">Controlled (Requires approval)</option>
           </select>
           <div class="form-help">Choose who can access this resource</div>
         </div>
@@ -1308,6 +1475,31 @@
       <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage.trim()">
         <i class="pi pi-send"></i>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- Project Switcher Modal -->
+<div class="project-switcher-overlay" *ngIf="showProjectSwitcher" (click)="closeProjectSwitcher()">
+  <div class="project-switcher-modal" (click)="$event.stopPropagation()">
+    <div class="switcher-header">
+      <h3>Switch Project</h3>
+      <button class="close-switcher" (click)="closeProjectSwitcher()">×</button>
+    </div>
+    <div class="projects-grid">
+      <div class="project-card" 
+           *ngFor="let project of allProjects" 
+           [class.current]="project.id === teamId"
+           (click)="selectProject(project.id)">
+        <div class="project-icon">
+          <i class="pi pi-folder"></i>
+        </div>
+        <div class="project-info">
+          <h4>{{ project.name }}</h4>
+          <p>{{ project.description }}</p>
+        </div>
+        <div class="project-status" [class]="getStatusClass(project.status)">{{ project.status }}</div>
+      </div>
     </div>
   </div>
 </div>

@@ -1,0 +1,76 @@
+/* Square and Spacious Resource Cards for All Pages */
+.resources-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 32px !important;
+  justify-content: start !important;
+  padding: 32px !important;
+}
+
+.resource-card {
+  width: 100% !important;
+  height: 380px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: white !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  padding: 32px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  overflow: hidden !important;
+}
+
+.resource-card .resource-description {
+  flex: 1 !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  margin: 16px 0 !important;
+}
+
+.resource-card .resource-actions {
+  margin-top: auto !important;
+  padding-top: 16px !important;
+}
+
+.resource-card .resource-header {
+  margin-bottom: 16px !important;
+}
+
+.resource-card .resource-metadata {
+  margin: 16px 0 !important;
+  padding: 16px !important;
+}
+
+/* My Uploads Grid */
+.uploads-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 32px !important;
+  justify-content: start !important;
+  padding: 32px !important;
+}
+
+.uploads-grid .resource-card.upload {
+  width: 100% !important;
+  height: 380px !important;
+  padding: 32px !important;
+  border-radius: 16px !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .resources-grid,
+  .uploads-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    padding: 16px !important;
+  }
+  
+  .resource-card,
+  .uploads-grid .resource-card.upload {
+    width: 100% !important;
+    height: 280px !important;
+    padding: 20px !important;
+  }
+}

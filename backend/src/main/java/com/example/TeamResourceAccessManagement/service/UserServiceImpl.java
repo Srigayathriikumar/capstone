@@ -209,4 +209,18 @@ public class UserServiceImpl implements UserService {
     public long getActiveUserCount() {
         return userRepository.findAll().size();
     }
+    
+    @Override
+    public List<UserResponseDTO> searchUsers(String query) {
+        String searchQuery = query.toLowerCase();
+        return userRepository.findAll().stream()
+            .filter(user -> 
+                user.getUsername().toLowerCase().contains(searchQuery) ||
+                user.getEmail().toLowerCase().contains(searchQuery) ||
+                (user.getFullName() != null && user.getFullName().toLowerCase().contains(searchQuery)) ||
+                user.getRole().toString().toLowerCase().contains(searchQuery)
+            )
+            .map(UserMapper::toResponse)
+            .collect(Collectors.toList());
+    }
 }

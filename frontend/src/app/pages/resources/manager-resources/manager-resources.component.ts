@@ -617,6 +617,7 @@ export class ManagerResourcesComponent implements OnInit {
   allProjects: any[] = [];
   sidebarHidden = false;
   currentUsername: string = '';
+  showProjectSwitcher = false;
   
   getStatusClass(status: string): string {
     return status ? `status-${status.toLowerCase()}` : 'status-unknown';
@@ -683,5 +684,22 @@ export class ManagerResourcesComponent implements OnInit {
       default:
         return true;
     }
+  }
+  
+  toggleProjectSwitcher(): void {
+    this.showProjectSwitcher = !this.showProjectSwitcher;
+  }
+
+  closeProjectSwitcher(): void {
+    this.showProjectSwitcher = false;
+  }
+
+  selectProject(projectId: number): void {
+    if (projectId && projectId !== this.teamId) {
+      this.router.navigate(['/team', projectId, 'resources', 'manager']).then(() => {
+        window.location.reload();
+      });
+    }
+    this.closeProjectSwitcher();
   }
 }

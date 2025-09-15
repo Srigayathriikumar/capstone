@@ -339,4 +339,25 @@ export class TeamService {
   logout(): void {
     this.authService.logout();
   }
+  
+  createProject(projectData: any): Observable<Team> {
+    console.log('Sending project data to API:', projectData);
+    return this.http.post<Team>(`${this.apiUrl}/projects`, projectData, { headers: this.getHeaders() });
+  }
+  
+  getAllManagers(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/users/managers`, { headers: this.getHeaders() });
+  }
+  
+  getAllEmployees(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/users/employees`, { headers: this.getHeaders() });
+  }
+  
+  searchUsers(query: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/users/search?query=${encodeURIComponent(query)}`, { headers: this.getHeaders() });
+  }
+  
+  getProjectsByManager(managerId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/projects/manager/${managerId}`, { headers: this.getHeaders() });
+  }
 }

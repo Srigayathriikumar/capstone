@@ -5,6 +5,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Table(name = "tramprojects",
@@ -35,7 +36,7 @@ public class Project {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
         name = "project_users",
         joinColumns = @JoinColumn(name = "project_id", foreignKey = @ForeignKey(name = "fk_project_users_project")),
@@ -45,10 +46,10 @@ public class Project {
             @Index(name = "idx_project_users_user_id", columnList = "user_id")
         }
     )
-    private Set<User> users;
+    private Set<User> users = new HashSet<>();
     
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Resource> resources;
+    private Set<Resource> resources = new HashSet<>();
 
     public enum ProjectStatus {
         ACTIVE, INACTIVE, COMPLETED, ARCHIVED

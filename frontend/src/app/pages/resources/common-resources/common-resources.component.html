@@ -9,11 +9,11 @@
       <img src="logo.png" alt="TRAM Logo" class="navbar-logo">
       <span class="navbar-title">TRAM Dashboard</span>
       <div class="project-switcher-nav">
-        <select (change)="switchProject($event)" [value]="teamId" class="project-select-nav">
-          <option *ngFor="let project of allProjects" [value]="project.id">
-            {{ project.name }}
-          </option>
-        </select>
+        <button class="project-switcher-btn" (click)="toggleProjectSwitcher()">
+          <i class="pi pi-th-large"></i>
+          <span>{{ team?.name || 'Select Project' }}</span>
+          <i class="pi pi-angle-down"></i>
+        </button>
       </div>
     </div>
     <div class="navbar-right">
@@ -35,34 +35,19 @@
   <!-- Content wrapper for sidebar and main content -->
   <div class="content-wrapper">
     <!-- Sidebar Navigation -->
-    <aside class="sidebar" [class.hidden]="sidebarHidden">
-      <div class="sidebar-header">
-        <div class="team-info">
-          <div class="team-header-row">
-            <h2>{{ team?.name }}</h2>
-          </div>
-          <div class="status-container">
-            <select 
-              *ngIf="isManagerOrAdmin()" 
-              class="status-dropdown-sidebar" 
-              [value]="team?.status" 
-              (change)="updateTeamStatus(team?.id, $event)"
-            >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="ARCHIVED">ARCHIVED</option>
-            </select>
-            <span 
-              *ngIf="!isManagerOrAdmin()" 
-              class="team-status" 
-              [class]="getStatusClass(team?.status || '')"
-            >
-              {{ team?.status }}
-            </span>
-          </div>
+    <aside class="sidebar" [class.hidden]="sidebarHidden" [class.collapsed]="sidebarHidden">
+    <div class="sidebar-header">
+      <div class="team-info">
+        <div class="team-header-row">
+          <h2>{{ team?.name }}</h2>
+        </div>
+        <div class="status-container">
+          <span class="team-status" [class]="getStatusClass(team?.status || '')">
+            {{ team?.status }}
+          </span>
         </div>
       </div>
+    </div>
       
       <nav class="sidebar-nav">
         <button class="nav-item" (click)="setActiveTab('overview')">
@@ -85,7 +70,7 @@
             </button>
             <button class="nav-subitem" (click)="navigateToManagerResources()">
               <i class="pi pi-lock"></i>
-              <span>Manager Controlled</span>
+              <span>Controlled Resources</span>
             </button>
           </div>
         </div>
@@ -97,7 +82,19 @@
           <i class="pi pi-upload"></i>
           <span>My Uploads</span>
         </button>
-        <button class="nav-item" (click)="setActiveTab('audit')" *ngIf="isManagerOrAdmin()">
+        <button 
+          *ngIf="isManagerOrAdmin()"
+          class="nav-item"
+          (click)="setActiveTab('create-project')"
+        >
+          <i class="pi pi-plus"></i>
+          <span>Create Project</span>
+        </button>
+        <button 
+          *ngIf="isManagerOrAdmin()"
+          class="nav-item"
+          (click)="setActiveTab('audit')"
+        >
           <i class="pi pi-chart-line"></i>
           <span>Audit Log</span>
         </button>
@@ -225,6 +222,31 @@
   </div>
 </div>
 
+<!-- Project Switcher Modal -->
+<div class="project-switcher-overlay" *ngIf="showProjectSwitcher" (click)="closeProjectSwitcher()">
+  <div class="project-switcher-modal" (click)="$event.stopPropagation()">
+    <div class="switcher-header">
+      <h3>Switch Project</h3>
+      <button class="close-switcher" (click)="closeProjectSwitcher()">×</button>
+    </div>
+    <div class="projects-grid">
+      <div class="project-card" 
+           *ngFor="let project of allProjects" 
+           [class.current]="project.id === teamId"
+           (click)="selectProject(project.id)">
+        <div class="project-icon">
+          <i class="pi pi-folder"></i>
+        </div>
+        <div class="project-info">
+          <h4>{{ project.name }}</h4>
+          <p>{{ project.description }}</p>
+        </div>
+        <div class="project-status" [class]="getStatusClass(project.status)">{{ project.status }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Add Resource Modal -->
 <div class="modal-overlay" *ngIf="showAddResourceModal" (click)="closeAddResourceModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
@@ -247,21 +269,102 @@
       <div class="form-row">
         <div class="form-group">
           <label>Type *</label>
-          <select formControlName="type" class="form-control">
-            <option value="OTHER">Other</option>
-            <option value="DATABASE">Database</option>
-            <option value="API">API</option>
-          </select>
+          <div class="select-wrapper">
+            <select formControlName="type" class="form-control">
+              <option value="DATABASE">Database</option>
+              <option value="API">API</option>
+              <option value="REST_API">REST API</option>
+              <option value="GRAPHQL_API">GraphQL API</option>
+              <option value="SERVICE">Service</option>
+              <option value="TOOL">Tool</option>
+              <option value="DOCUMENT">Document</option>
+              <option value="PDF">PDF</option>
+              <option value="DOC">DOC</option>
+              <option value="DOCX">DOCX</option>
+              <option value="XLS">XLS</option>
+              <option value="XLSX">XLSX</option>
+              <option value="PPT">PPT</option>
+              <option value="PPTX">PPTX</option>
+              <option value="TXT">TXT</option>
+              <option value="RTF">RTF</option>
+              <option value="ODT">ODT</option>
+              <option value="ODS">ODS</option>
+              <option value="ODP">ODP</option>
+              <option value="JPG">JPG</option>
+              <option value="JPEG">JPEG</option>
+              <option value="PNG">PNG</option>
+              <option value="GIF">GIF</option>
+              <option value="BMP">BMP</option>
+              <option value="TIFF">TIFF</option>
+              <option value="SVG">SVG</option>
+              <option value="WEBP">WEBP</option>
+              <option value="ICO">ICO</option>
+              <option value="MP4">MP4</option>
+              <option value="AVI">AVI</option>
+              <option value="MOV">MOV</option>
+              <option value="WMV">WMV</option>
+              <option value="FLV">FLV</option>
+              <option value="WEBM">WEBM</option>
+              <option value="MKV">MKV</option>
+              <option value="MPEG">MPEG</option>
+              <option value="MPG">MPG</option>
+              <option value="MP3">MP3</option>
+              <option value="WAV">WAV</option>
+              <option value="FLAC">FLAC</option>
+              <option value="AAC">AAC</option>
+              <option value="OGG">OGG</option>
+              <option value="WMA">WMA</option>
+              <option value="M4A">M4A</option>
+              <option value="ZIP">ZIP</option>
+              <option value="RAR">RAR</option>
+              <option value="TAR">TAR</option>
+              <option value="GZ">GZ</option>
+              <option value="BZ2">BZ2</option>
+              <option value="SEVEN_Z">7Z</option>
+              <option value="JAVA">JAVA</option>
+              <option value="JAVASCRIPT">JavaScript</option>
+              <option value="PYTHON">Python</option>
+              <option value="HTML">HTML</option>
+              <option value="CSS">CSS</option>
+              <option value="XML">XML</option>
+              <option value="JSON">JSON</option>
+              <option value="YAML">YAML</option>
+              <option value="SQL">SQL</option>
+              <option value="SH">Shell Script</option>
+              <option value="BAT">Batch File</option>
+              <option value="GITHUB_LINK">GitHub Link</option>
+              <option value="GITLAB_LINK">GitLab Link</option>
+              <option value="BITBUCKET_LINK">Bitbucket Link</option>
+              <option value="URL">URL</option>
+              <option value="CLOUD_SERVICE">Cloud Service</option>
+              <option value="AWS_S3">AWS S3</option>
+              <option value="GOOGLE_DRIVE">Google Drive</option>
+              <option value="DROPBOX">Dropbox</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
         </div>
         
         <div class="form-group">
           <label>Category *</label>
-          <select formControlName="category" class="form-control">
-            <option value="DOCUMENTS">Documents</option>
-            <option value="DATABASES">Databases</option>
-            <option value="APIS">APIs</option>
-            <option value="OTHER">Other</option>
-          </select>
+          <div class="select-wrapper">
+            <select formControlName="category" class="form-control">
+              <option value="DATABASE">Database Resources</option>
+              <option value="API">API Resources</option>
+              <option value="DOCUMENTATION">Documentation</option>
+              <option value="REPOSITORY">Code Repositories</option>
+              <option value="EXTERNAL_LINKS">External Links</option>
+              <option value="CLOUD_SERVICES">Cloud Services</option>
+              <option value="DOCUMENTS">Documents</option>
+              <option value="IMAGES">Images</option>
+              <option value="VIDEOS">Videos</option>
+              <option value="AUDIO">Audio Files</option>
+              <option value="ARCHIVES">Archive Files</option>
+              <option value="CODE_FILES">Code Files</option>
+              <option value="MEDIA">Media Files</option>
+              <option value="OTHER">Other Resources</option>
+            </select>
+          </div>
         </div>
       </div>
       

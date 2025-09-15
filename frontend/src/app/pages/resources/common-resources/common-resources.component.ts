@@ -418,6 +418,7 @@ export class CommonResourcesComponent implements OnInit {
   team: any = null;
   allProjects: any[] = [];
   sidebarHidden = false;
+  showProjectSwitcher = false;
   
   getStatusClass(status: string): string {
     return status ? `status-${status.toLowerCase()}` : 'status-unknown';
@@ -465,5 +466,22 @@ export class CommonResourcesComponent implements OnInit {
         console.error('Error updating team status:', err);
       }
     });
+  }
+  
+  toggleProjectSwitcher(): void {
+    this.showProjectSwitcher = !this.showProjectSwitcher;
+  }
+
+  closeProjectSwitcher(): void {
+    this.showProjectSwitcher = false;
+  }
+
+  selectProject(projectId: number): void {
+    if (projectId && projectId !== this.teamId) {
+      this.router.navigate(['/team', projectId, 'resources', 'common']).then(() => {
+        window.location.reload();
+      });
+    }
+    this.closeProjectSwitcher();
   }
 }
