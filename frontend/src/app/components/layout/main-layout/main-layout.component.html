@@ -1,0 +1,35 @@
+<div class="main-layout">
+  <!-- Sidebar -->
+  <app-sidebar
+    [brandName]="brandName"
+    [brandIcon]="brandIcon"
+    [navSections]="navSections"
+    [currentUser]="currentUser"
+    [isCollapsed]="sidebarCollapsed"
+    (toggleCollapse)="onToggleSidebar()"
+    (logout)="onLogout()"
+  ></app-sidebar>
+
+  <!-- Mobile Sidebar Overlay -->
+  <div class="sidebar-overlay" *ngIf="sidebarOpen" (click)="onToggleMobileSidebar()"></div>
+
+  <!-- Main Content Area -->
+  <div class="main-content" [class.sidebar-collapsed]="sidebarCollapsed">
+    <!-- Top Navigation -->
+    <app-navbar
+      [breadcrumbs]="breadcrumbs"
+      [currentUser]="currentUser"
+      [showSearch]="showSearch"
+      [searchPlaceholder]="searchPlaceholder"
+      (search)="onSearch($event)"
+      (toggleSidebar)="onToggleMobileSidebar()"
+      (logout)="onLogout()"
+      (userMenuClick)="onUserMenuClick()"
+    ></app-navbar>
+
+    <!-- Page Content -->
+    <main class="content-area">
+      <ng-content></ng-content>
+    </main>
+  </div>
+</div>

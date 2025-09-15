@@ -1,0 +1,453 @@
+/* Notifications & Access Requests - Professional Blue & White Theme */
+
+/* Notification Container */
+.notification-container {
+  position: relative;
+}
+
+.notification-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  font-size: 1.25rem;
+}
+
+.notification-btn:hover {
+  background: var(--very-light-blue);
+  border-color: var(--primary-blue);
+  transform: scale(1.05);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background: var(--error);
+  color: var(--white);
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 400px;
+  max-height: 500px;
+  z-index: 1000;
+  animation: dropdownSlideIn 0.2s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  background: var(--gray-50);
+}
+
+.notification-header h4 {
+  color: var(--gray-900);
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.close-notifications {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--gray-400);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+.close-notifications:hover {
+  color: var(--gray-600);
+  background: var(--gray-200);
+}
+
+.notification-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--gray-100);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-item:hover {
+  background: var(--very-light-blue);
+}
+
+.notification-item.unread {
+  background: var(--very-light-blue);
+  border-left: 4px solid var(--primary-blue);
+}
+
+.notification-content h5 {
+  color: var(--gray-900);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.notification-content p {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.notification-time {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.no-notifications {
+  text-align: center;
+  padding: 2rem;
+  color: var(--gray-500);
+  font-style: italic;
+}
+
+/* Access Requests Section */
+.section-header {
+  margin-bottom: 2rem;
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--very-light-blue) 0%, var(--white) 100%);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--light-blue);
+}
+
+.section-header h3 {
+  color: var(--gray-900);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.section-description {
+  color: var(--gray-600);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Request Lists */
+.manager-requests,
+.user-requests {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.request-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.request-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.request-card.manager-view {
+  border-left: 4px solid var(--primary-blue);
+}
+
+.request-card.user-view {
+  border-left: 4px solid var(--accent-blue);
+}
+
+.request-header {
+  padding: 2rem;
+}
+
+.request-info {
+  margin-bottom: 1.5rem;
+}
+
+.requester-info h4,
+.resource-info h4 {
+  color: var(--gray-900);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.requester-info p,
+.resource-info p {
+  color: var(--gray-700);
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.justification {
+  background: var(--gray-50);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--light-blue);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--gray-700);
+  margin-bottom: 1rem;
+}
+
+.manager-info {
+  background: var(--very-light-blue);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--light-blue);
+  font-size: 0.875rem;
+  color: var(--primary-blue);
+  margin-bottom: 1rem;
+}
+
+.response-info {
+  background: var(--gray-50);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--success);
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  margin-bottom: 1rem;
+}
+
+.request-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.request-status {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.request-date,
+.approval-date {
+  color: var(--gray-500);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.request-actions {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+}
+
+.approve-btn {
+  background: var(--success);
+  color: var(--white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.approve-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.reject-btn {
+  background: var(--error);
+  color: var(--white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.reject-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.request-completed {
+  padding: 1rem 2rem;
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+}
+
+.completion-note {
+  color: var(--gray-600);
+  font-size: 0.875rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Empty States */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  border: 2px dashed var(--gray-300);
+}
+
+.empty-state h3 {
+  color: var(--gray-700);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  color: var(--gray-500);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .notification-dropdown {
+    width: 320px;
+    right: -50px;
+  }
+  
+  .section-header {
+    padding: 1.5rem;
+  }
+  
+  .section-header h3 {
+    font-size: 1.5rem;
+  }
+  
+  .request-header {
+    padding: 1.5rem;
+  }
+  
+  .request-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .request-actions {
+    flex-direction: column;
+    padding: 1rem 1.5rem;
+  }
+  
+  .approve-btn,
+  .reject-btn {
+    justify-content: center;
+  }
+  
+  .empty-state {
+    padding: 3rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .notification-dropdown {
+    width: 280px;
+    right: -100px;
+  }
+  
+  .requester-info h4,
+  .resource-info h4 {
+    font-size: 1.125rem;
+  }
+  
+  .section-header h3 {
+    font-size: 1.25rem;
+  }
+}

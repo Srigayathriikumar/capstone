@@ -1,0 +1,1318 @@
+<div class="team-details-container" *ngIf="!loading">
+  
+  <!-- Navigation Bar -->
+  <nav class="top-navbar">
+    <div class="navbar-left">
+      <button class="sidebar-toggle" (click)="toggleSidebar()">
+        <i class="pi pi-bars"></i>
+      </button>
+      <img src="logo.png" alt="TRAM Logo" class="navbar-logo">
+      <span class="navbar-title">TRAM Dashboard</span>
+      <div class="project-switcher-nav">
+        <select (change)="switchProject($event)" [value]="teamId" class="project-select-nav">
+          <option *ngFor="let project of allProjects" [value]="project.id">
+            {{ project.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <button class="nav-btn" title="User Details">
+        <i class="pi pi-user"></i>
+        <span>{{ currentUsername }}</span>
+      </button>
+      <div class="notification-container">
+        <button class="nav-btn" (click)="toggleNotifications()" title="Notifications">
+          <i class="pi pi-bell"></i>
+          <span class="notification-badge" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
+        </button>
+        
+        <div class="notification-dropdown" *ngIf="showNotifications">
+          <div class="notification-header">
+            <h4>Notifications</h4>
+            <button class="close-notifications" (click)="showNotifications = false">×</button>
+          </div>
+          <div class="notification-list">
+            <div class="notification-item" *ngFor="let notification of notifications.slice(0, 5)" 
+                 [class.unread]="!notification.isRead"
+                 (click)="markNotificationAsRead(notification.id)">
+              <div class="notification-content">
+                <h5>{{ notification.title }}</h5>
+                <p>{{ notification.message }}</p>
+                <span class="notification-time">{{ notification.createdAt | date:'short' }}</span>
+              </div>
+            </div>
+            <div class="no-notifications" *ngIf="notifications.length === 0">
+              <p>No notifications</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="nav-btn logout" (click)="logout()" title="Logout">
+        <i class="pi pi-sign-out"></i>
+      </button>
+    </div>
+  </nav>
+  
+  <!-- Content wrapper for sidebar and main content -->
+  <div class="content-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" [class.hidden]="sidebarHidden" [class.collapsed]="sidebarHidden">
+    <div class="sidebar-header">
+      <div class="team-info">
+        <div class="team-header-row">
+          <h2>{{ team?.name }}</h2>
+        </div>
+        <div class="status-container">
+          <select 
+            *ngIf="isManagerOrAdmin()" 
+            class="status-dropdown-sidebar" 
+            [value]="team?.status" 
+            (change)="updateTeamStatus(team?.id, $event)"
+          >
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="ARCHIVED">ARCHIVED</option>
+          </select>
+          <span 
+            *ngIf="!isManagerOrAdmin()" 
+            class="team-status" 
+            [class]="getStatusClass(team?.status || '')"
+          >
+            {{ team?.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+    
+
+    
+    <nav class="sidebar-nav">
+      <button 
+        class="nav-item"
+        [class.active]="activeTab === 'overview'"
+        (click)="setActiveTab('overview')"
+      >
+        <i class="pi pi-home"></i>
+        <span>Overview</span>
+      </button>
+      <button 
+        class="nav-item"
+        [class.active]="activeTab === 'members'"
+        (click)="setActiveTab('members')"
+      >
+        <i class="pi pi-users"></i>
+        <span>Members</span>
+      </button>
+      <div class="nav-group">
+        <div class="nav-group-header">
+          <i class="pi pi-folder"></i>
+          <span>Resources</span>
+        </div>
+        <div class="nav-subitems">
+          <button class="nav-subitem" (click)="navigateToCommonResources()">
+            <i class="pi pi-users"></i>
+            <span>Common Resources</span>
+          </button>
+          <button class="nav-subitem" (click)="navigateToManagerResources()">
+            <i class="pi pi-lock"></i>
+            <span>Manager Controlled</span>
+          </button>
+        </div>
+      </div>
+      <button 
+        class="nav-item"
+        [class.active]="activeTab === 'requests'"
+        (click)="setActiveTab('requests')"
+      >
+        <i class="pi pi-key"></i>
+        <span>Access Requests</span>
+      </button>
+      <button 
+        class="nav-item"
+        [class.active]="activeTab === 'uploads'"
+        (click)="setActiveTab('uploads')"
+      >
+        <i class="pi pi-upload"></i>
+        <span>My Uploads</span>
+      </button>
+      <button 
+        *ngIf="isManagerOrAdmin()"
+        class="nav-item"
+        [class.active]="activeTab === 'audit'"
+        (click)="setActiveTab('audit')"
+      >
+        <i class="pi pi-chart-line"></i>
+        <span>Audit Log</span>
+      </button>
+    </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-content" [class.expanded]="sidebarHidden">
+    <header class="content-header">
+      <div class="header-left">
+        <h1>{{ getTabTitle() }}</h1>
+        <p class="team-description">{{ team?.description }}</p>
+      </div>
+      <div class="header-actions">
+        <button class="chat-btn" (click)="toggleTeamChat()" title="Team Chat">
+          <i class="pi pi-comments"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="tab-content">
+    <!-- Overview Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'overview'" [class.manager-overview]="isManagerOrAdmin()" [class.user-overview]="!isManagerOrAdmin()">
+      <div class="overview-grid" [class.manager-grid]="isManagerOrAdmin()" [class.user-grid]="!isManagerOrAdmin()">
+        <!-- Manager View -->
+        <div class="overview-card" *ngIf="isManagerOrAdmin()">
+          <h3>Project Manager</h3>
+          <div class="manager-info" *ngIf="manager; else noManager">
+            <div class="manager-avatar">
+              {{ manager.username.charAt(0).toUpperCase() }}
+            </div>
+            <div class="manager-details">
+              <h4>{{ manager.username }}</h4>
+              <p>{{ manager.email }}</p>
+              <span class="manager-role">{{ manager.role }}</span>
+            </div>
+          </div>
+          <ng-template #noManager>
+            <p>No project manager assigned</p>
+          </ng-template>
+        </div>
+        
+        <div class="overview-card" *ngIf="isManagerOrAdmin()">
+          <h3>Team Statistics</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-number">{{ teamMembers.length }}</span>
+              <span class="stat-label">Team Members</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">{{ resources.length }}</span>
+              <span class="stat-label">Resources</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">{{ accessRequests.length }}</span>
+              <span class="stat-label">Access Requests</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="overview-card" *ngIf="isManagerOrAdmin()">
+          <h3><i class="pi pi-chart-line"></i> Team Performance</h3>
+          <div class="performance-metrics">
+            <div class="metric-item">
+              <div class="metric-icon success">
+                <i class="pi pi-check-circle"></i>
+              </div>
+              <div class="metric-info">
+                <span class="metric-value">{{ getApprovalRate() }}%</span>
+                <span class="metric-label">Approval Rate</span>
+              </div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-icon info">
+                <i class="pi pi-clock"></i>
+              </div>
+              <div class="metric-info">
+                <span class="metric-value">{{ getAvgResponseTime() }}h</span>
+                <span class="metric-label">Avg Response</span>
+              </div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-icon warning">
+                <i class="pi pi-users"></i>
+              </div>
+              <div class="metric-info">
+                <span class="metric-value">{{ getActiveMembers() }}</span>
+                <span class="metric-label">Active Members</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="overview-card" *ngIf="isManagerOrAdmin()">
+          <h3><i class="pi pi-tasks"></i> Access Request Status</h3>
+          <div class="request-stats">
+            <div class="status-stat pending">
+              <i class="pi pi-clock"></i>
+              <span class="count">{{ getPendingRequestsCount() }}</span>
+              <span class="label">Pending</span>
+            </div>
+            <div class="status-stat approved">
+              <i class="pi pi-check"></i>
+              <span class="count">{{ getApprovedRequestsCount() }}</span>
+              <span class="label">Approved</span>
+            </div>
+            <div class="status-stat rejected">
+              <i class="pi pi-times"></i>
+              <span class="count">{{ getRejectedRequestsCount() }}</span>
+              <span class="label">Rejected</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Manager View: Recent Activity -->
+        <div class="overview-card" *ngIf="isManagerOrAdmin()">
+          <h3>Recent Activity</h3>
+          <div class="activity-list">
+            <div class="activity-item" *ngFor="let request of accessRequests.slice(0, 5)">
+              <div class="activity-info">
+                <strong>{{ request.userName || request.requestedBy }}</strong> requested access to 
+                <strong>{{ request.resourceName }}</strong>
+              </div>
+              <span class="activity-time">{{ request.requestedAt | date:'short' }}</span>
+            </div>
+            <div class="no-activity" *ngIf="accessRequests.length === 0">
+              No recent team activity
+            </div>
+          </div>
+        </div>
+        
+        <!-- User View: First Row - Access Summary Cards -->
+        <div class="overview-card access-summary-card" *ngIf="!isManagerOrAdmin()">
+          <div class="access-item">
+            <i class="pi pi-check-circle"></i>
+            <span class="access-count">{{ getUserApprovedCount() }}</span>
+            <span class="access-label">Approved Access</span>
+          </div>
+        </div>
+        
+        <div class="overview-card access-summary-card" *ngIf="!isManagerOrAdmin()">
+          <div class="access-item">
+            <i class="pi pi-clock"></i>
+            <span class="access-count">{{ getUserPendingCount() }}</span>
+            <span class="access-label">Pending Requests</span>
+          </div>
+        </div>
+        
+        <div class="overview-card access-summary-card" *ngIf="!isManagerOrAdmin()">
+          <div class="access-item">
+            <i class="pi pi-upload"></i>
+            <span class="access-count">{{ userUploads.length }}</span>
+            <span class="access-label">My Contributions</span>
+          </div>
+        </div>
+        
+        <div class="overview-card" *ngIf="isManagerOrAdmin()">
+          <h3><i class="pi pi-chart-pie"></i> Resource Distribution</h3>
+          <div class="resource-chart">
+            <div class="chart-container">
+              <div class="pie-chart" [style.background]="getResourceChartGradient()"></div>
+              <div class="chart-legend">
+                <div class="legend-item">
+                  <span class="legend-color common"></span>
+                  <span>Common ({{ commonResources.length }})</span>
+                </div>
+                <div class="legend-item">
+                  <span class="legend-color manager"></span>
+                  <span>Manager ({{ managerResources.length }})</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- User View: Second Row - My Profile and Heatmap -->
+        <div class="overview-card profile-card" *ngIf="!isManagerOrAdmin()">
+          <h3><i class="pi pi-user"></i> My Profile</h3>
+          <div class="user-info">
+            <div class="user-profile-image">
+              <img [src]="getUserAvatar()" 
+                   alt="User Avatar" 
+                   class="profile-img"
+                   (error)="onImageError($event)">
+              <div class="user-avatar-fallback">
+                {{ currentUsername.charAt(0).toUpperCase() }}
+              </div>
+            </div>
+            <div class="user-details">
+              <h4>{{ currentUsername }}</h4>
+              <p>{{ getCurrentUserEmail() }}</p>
+              <span class="user-role">{{ getCurrentUserRole() }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="overview-card heatmap-card" *ngIf="!isManagerOrAdmin()">
+          <h3>Team Activity Heatmap</h3>
+          <div class="activity-heatmap">
+            <div class="heatmap-grid">
+              <div class="heatmap-cell" 
+                   *ngFor="let day of getActivityHeatmapData()" 
+                   [class]="'activity-' + day.level"
+                   [title]="day.count + ' activities on ' + day.date">
+              </div>
+            </div>
+            <div class="heatmap-legend">
+              <span class="legend-text">Less</span>
+              <div class="legend-scale">
+                <div class="scale-item activity-0"></div>
+                <div class="scale-item activity-1"></div>
+                <div class="scale-item activity-2"></div>
+                <div class="scale-item activity-3"></div>
+              </div>
+              <span class="legend-text">More</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- User View: Third Row - Full Width Recent Activity -->
+        <div class="overview-card recent-activity-full" *ngIf="!isManagerOrAdmin()">
+          <h3>Recent Activity</h3>
+          <div class="activity-list">
+            <div class="activity-item" *ngFor="let request of userAccessRequests.slice(0, 10)">
+              <div class="activity-info">
+                You requested access to <strong>{{ request.resourceName }}</strong>
+                <span class="status-indicator" [class]="'status-' + request.status.toLowerCase()">{{ request.status }}</span>
+              </div>
+              <span class="activity-time">{{ request.requestedAt | date:'short' }}</span>
+            </div>
+            <div class="no-activity" *ngIf="userAccessRequests.length === 0">
+              No recent activity
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Members Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'members'">
+      <div class="members-section" *ngIf="manager">
+        <h3>Project Manager</h3>
+        <div class="member-card manager-card">
+          <div class="member-avatar">
+            {{ manager.username.charAt(0).toUpperCase() }}
+          </div>
+          <div class="member-info">
+            <h4>{{ manager.username }}</h4>
+            <p>{{ manager.email }}</p>
+            <span class="member-role manager">{{ manager.role }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="members-section">
+        <h3>Team Members</h3>
+        <div class="members-grid">
+          <div class="member-card" *ngFor="let member of teamMembers">
+            <div class="member-avatar">
+              {{ member.username.charAt(0).toUpperCase() }}
+            </div>
+            <div class="member-info">
+              <h4>{{ member.username }}</h4>
+              <p>{{ member.email }}</p>
+              <span class="member-role">{{ member.role }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="teamMembers.length === 0">
+          <h3>No team members</h3>
+          <p>This team doesn't have any members yet.</p>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Access Requests Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'requests'">
+      <div class="requests-container">
+        <!-- Manager/Admin View -->
+        <div *ngIf="isManagerOrAdmin()" class="manager-requests-view">
+          <div class="requests-header">
+            <h3>Pending Access Requests</h3>
+            <p class="requests-subtitle">Review and approve access requests from team members</p>
+          </div>
+          
+          <div class="requests-table-container" *ngIf="pendingApprovalRequests.length > 0; else noPendingRequests">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Resource</th>
+                  <th>Requested</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let request of pendingApprovalRequests" 
+                    class="table-row" 
+                    (click)="showRequestDetails(request)">
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-avatar-small">
+                        {{ (request.userName || request.requestedBy).charAt(0).toUpperCase() }}
+                      </div>
+                      <span class="user-name">{{ request.userName || request.requestedBy }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="resource-cell">
+                      <span class="resource-name">{{ request.resourceName }}</span>
+                      <span class="access-level">{{ request.requestedAccessLevel || 'read' }}</span>
+                    </div>
+                  </td>
+                  <td class="date-cell">{{ request.requestedAt | date:'short' }}</td>
+                  <td>
+                    <span class="status-badge" [ngClass]="{
+                      'status-pending': request.status === 'PENDING',
+                      'status-approved': request.status === 'APPROVED', 
+                      'status-rejected': request.status === 'REJECTED'
+                    }">{{ request.status }}</span>
+                  </td>
+                  <td class="actions-cell" (click)="$event.stopPropagation()">
+                    <button class="btn-table btn-approve" (click)="approveRequest(request.id)" title="Approve">
+                      <i class="pi pi-check"></i>
+                    </button>
+                    <button class="btn-table btn-reject" (click)="openRejectModal(request)" title="Reject">
+                      <i class="pi pi-times"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <ng-template #noPendingRequests>
+            <div class="empty-state">
+              <h3>No pending requests</h3>
+              <p>All access requests have been processed.</p>
+            </div>
+          </ng-template>
+        </div>
+        
+        <!-- Team Member View -->
+        <div *ngIf="!isManagerOrAdmin()" class="member-requests-view">
+          <div class="requests-header">
+            <h3>My Access Requests</h3>
+            <p class="requests-subtitle">Track your access requests and their status</p>
+          </div>
+          
+          <div class="requests-table-container" *ngIf="userAccessRequests.length > 0; else noUserRequests">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Resource</th>
+                  <th>Requested</th>
+                  <th>Access Level</th>
+                  <th>Status</th>
+                  <th>Response</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let request of userAccessRequests" 
+                    class="table-row" 
+                    (click)="showRequestDetails(request)">
+                  <td class="resource-name">{{ request.resourceName }}</td>
+                  <td class="date-cell">{{ request.requestedAt | date:'short' }}</td>
+                  <td>
+                    <span class="access-level">{{ request.requestedAccessLevel || 'read' }}</span>
+                  </td>
+                  <td>
+                    <span class="status-badge" [ngClass]="{
+                      'status-pending': request.status === 'PENDING',
+                      'status-approved': request.status === 'APPROVED',
+                      'status-rejected': request.status === 'REJECTED'
+                    }">{{ request.status }}</span>
+                  </td>
+                  <td class="response-cell">
+                    <span *ngIf="request.status === 'APPROVED'" class="response-approved">Approved</span>
+                    <span *ngIf="request.status === 'REJECTED'" class="response-rejected">Rejected</span>
+                    <span *ngIf="request.status === 'PENDING'" class="response-pending">Pending</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <ng-template #noUserRequests>
+            <div class="empty-state">
+              <h3>No access requests</h3>
+              <p>You haven't made any access requests yet.</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Uploads Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'uploads'">
+      <div class="uploads-section">
+        <div class="section-header">
+          <h3>📁 My Uploads</h3>
+          <p class="section-description">Resources you have uploaded to this team</p>
+        </div>
+        
+        <div class="uploads-grid">
+          <div class="resource-card upload" *ngFor="let resource of userUploads">
+            <div class="resource-header">
+              <div class="resource-title-section">
+                <i class="file-icon {{ getFileIcon(resource) }}"></i>
+                <h4>{{ resource.name }}</h4>
+              </div>
+              <div class="resource-tags">
+                <span class="resource-type">{{ resource.type }}</span>
+                <span class="resource-category">{{ resource.category || 'OTHER' }}</span>
+                <span class="access-type-badge" [class]="resource.accessType === 'COMMON' ? 'common' : 'manager'">
+                  {{ resource.accessType === 'COMMON' ? 'Common Access' : 'Manager Controlled' }}
+                </span>
+              </div>
+            </div>
+            
+            <p class="resource-description">{{ resource.description }}</p>
+            
+            <div class="resource-metadata" *ngIf="resource.filePath || resource.resourceUrl || resource.fileData">
+              <div class="metadata-item" *ngIf="resource.resourceUrl">
+                <span class="metadata-label">🔗 URL:</span>
+                <a [href]="resource.resourceUrl" target="_blank" class="resource-link">
+                  {{ resource.resourceUrl.length > 50 ? (resource.resourceUrl | slice:0:50) + '...' : resource.resourceUrl }}
+                </a>
+              </div>
+              <div class="metadata-item" *ngIf="resource.filePath || resource.fileData">
+                <span class="metadata-label">📁 File:</span>
+                <span class="file-path">{{ resource.filePath ? resource.filePath.split('/').pop() : 'Database File' }}</span>
+              </div>
+              <div class="metadata-item" *ngIf="resource.fileSize">
+                <span class="metadata-label">📊 Size:</span>
+                <span class="file-size">{{ formatFileSize(resource.fileSize) }}</span>
+              </div>
+              <div class="metadata-item" *ngIf="resource.createdAt">
+                <span class="metadata-label">📅 Uploaded:</span>
+                <span class="upload-date">{{ resource.createdAt | date:'short' }}</span>
+              </div>
+            </div>
+            
+            <div class="resource-actions">
+              <button class="btn btn-sm btn-primary view-file-btn" *ngIf="canViewFile(resource)" (click)="viewFile(resource)" title="View File">
+                <i class="pi pi-eye"></i> View
+              </button>
+              <button class="btn btn-sm btn-secondary download-file-btn" *ngIf="canViewFile(resource)" (click)="downloadFile(resource)" title="Download File">
+                <i class="pi pi-download"></i> Download
+              </button>
+              <button class="btn btn-sm btn-info view-access-btn" (click)="showResourceAccess(resource)" title="View Access">
+                <i class="pi pi-users"></i> Access
+              </button>
+              <button class="btn btn-sm btn-warning edit-access-btn" (click)="openEditAccessModal(resource)" title="Edit Access Settings">
+                <i class="pi pi-cog"></i> Edit Access
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="empty-state" *ngIf="userUploads.length === 0">
+          <h3>📤 No Uploads Yet</h3>
+          <p>You haven't uploaded any resources to this team yet. Visit the Resources tab to add your first upload!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Common Resources Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'common-resources'">
+      <app-common-resources></app-common-resources>
+    </div>
+
+    <!-- Manager Controlled Resources Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'manager-resources'">
+      <div class="resources-content">
+        <div class="resources-header">
+          <h3><i class="pi pi-lock"></i> Manager Controlled Resources</h3>
+          <p>Resources requiring approval for access ({{ managerResources.length }} resources)</p>
+          <button class="btn btn-primary" *ngIf="isManagerOrAdmin()" (click)="openAddResourceModal('MANAGER_CONTROLLED')">
+            <i class="pi pi-plus"></i> Add Resource
+          </button>
+        </div>
+        <div class="resources-grid">
+          <div class="resource-card" *ngFor="let resource of managerResources">
+            <div class="resource-header">
+              <h4>{{ resource.name }}</h4>
+              <span class="resource-type">{{ resource.type }}</span>
+            </div>
+            <p class="resource-description">{{ resource.description }}</p>
+            <div class="resource-actions">
+              <button class="btn btn-sm btn-primary" *ngIf="canAccessResource(resource)" (click)="viewFile(resource)">
+                <i class="pi pi-eye"></i> View
+              </button>
+              <button class="btn btn-sm btn-warning" *ngIf="!hasApprovedAccess(resource) && !isManagerOrAdmin()" (click)="openRequestAccessModal(resource)">
+                <i class="pi pi-key"></i> Request Access
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="managerResources.length === 0">
+          <h3>No manager controlled resources</h3>
+          <p>No manager controlled resources have been added yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Log Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'audit'">
+      <div class="audit-container">
+        <div class="audit-header">
+          <h3><i class="pi pi-chart-line"></i> Audit Log</h3>
+          <p class="audit-subtitle">Comprehensive tracking of all team activities and access changes</p>
+        </div>
+        
+        <!-- Filters and Controls -->
+        <div class="audit-controls">
+          <div class="filters-row">
+            <div class="filter-group">
+              <label for="userFilter"><i class="pi pi-user"></i> User:</label>
+              <select id="userFilter" [(ngModel)]="auditFilters.user" (change)="applyAuditFilters()" class="filter-select">
+                <option value="">All Users</option>
+                <option *ngFor="let user of getUniqueUsers()" [value]="user">{{ user }}</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label for="statusFilter"><i class="pi pi-list"></i> Status:</label>
+              <select id="statusFilter" [(ngModel)]="auditFilters.status" (change)="applyAuditFilters()" class="filter-select">
+                <option value="">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label for="resourceFilter"><i class="pi pi-folder"></i> Resource:</label>
+              <select id="resourceFilter" [(ngModel)]="auditFilters.resource" (change)="applyAuditFilters()" class="filter-select">
+                <option value="">All Resources</option>
+                <option *ngFor="let resource of getUniqueResources()" [value]="resource">{{ resource }}</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label for="dateFromFilter"><i class="pi pi-calendar"></i> From:</label>
+              <input type="date" id="dateFromFilter" [(ngModel)]="auditFilters.dateFrom" (change)="applyAuditFilters()" class="filter-input">
+            </div>
+            
+            <div class="filter-group">
+              <label for="dateToFilter"><i class="pi pi-calendar"></i> To:</label>
+              <input type="date" id="dateToFilter" [(ngModel)]="auditFilters.dateTo" (change)="applyAuditFilters()" class="filter-input">
+            </div>
+            
+            <button class="clear-filters-btn" (click)="clearAuditFilters()" title="Clear all filters">
+              <i class="pi pi-trash"></i> Clear
+            </button>
+          </div>
+          
+          <div class="controls-row">
+            <div class="sort-controls">
+              <label><i class="pi pi-sort"></i> Sort by:</label>
+              <select [(ngModel)]="auditSort.field" (change)="applySorting()" class="sort-select">
+                <option value="requestedAt">Date</option>
+                <option value="userName">User</option>
+                <option value="resourceName">Resource</option>
+                <option value="status">Status</option>
+              </select>
+              <button class="sort-direction-btn" (click)="toggleSortDirection()" [title]="auditSort.direction === 'asc' ? 'Sort Ascending' : 'Sort Descending'">
+                <i [class]="auditSort.direction === 'asc' ? 'pi pi-sort-up' : 'pi pi-sort-down'"></i>
+              </button>
+            </div>
+            
+            <div class="view-controls">
+              <label><i class="pi pi-eye"></i> Show:</label>
+              <select [(ngModel)]="auditPagination.pageSize" (change)="changePageSize()" class="pagesize-select">
+                <option value="10">10 per page</option>
+                <option value="25">25 per page</option>
+                <option value="50">50 per page</option>
+                <option value="100">100 per page</option>
+              </select>
+            </div>
+            
+            <div class="export-controls">
+              <button class="export-btn" (click)="exportAuditLog()" title="Export audit log">
+                <i class="pi pi-download"></i> Export
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Results Summary -->
+        <div class="audit-summary">
+          <div class="summary-stats">
+            <span class="total-count"><i class="pi pi-chart-bar"></i> Total: {{ filteredAuditRequests.length }} entries</span>
+            <span class="status-breakdown">
+              <span class="status-stat pending"><i class="pi pi-clock"></i> Pending: {{ getStatusCount('PENDING') }}</span>
+              <span class="status-stat approved"><i class="pi pi-check"></i> Approved: {{ getStatusCount('APPROVED') }}</span>
+              <span class="status-stat rejected"><i class="pi pi-times"></i> Rejected: {{ getStatusCount('REJECTED') }}</span>
+            </span>
+          </div>
+        </div>
+        
+        <!-- Audit Entries -->
+        <div class="audit-list" *ngIf="paginatedAuditRequests.length > 0; else noAuditEntries">
+          <div class="audit-item" *ngFor="let request of paginatedAuditRequests; trackBy: trackByAuditId">
+            <div class="audit-icon">
+              <span *ngIf="request.status === 'APPROVED'" class="icon approved" title="Approved"><i class="pi pi-check"></i></span>
+              <span *ngIf="request.status === 'REJECTED'" class="icon rejected" title="Rejected"><i class="pi pi-times"></i></span>
+              <span *ngIf="request.status === 'PENDING'" class="icon pending" title="Pending"><i class="pi pi-clock"></i></span>
+            </div>
+            
+            <div class="audit-content">
+              <div class="audit-main">
+                <h4 class="audit-title">
+                  <span class="user-name">{{ request.userName || request.requestedBy }}</span>
+                  <span class="action-text">{{ getAuditAction(request.status) }}</span>
+                  <span class="resource-name">{{ request.resourceName }}</span>
+                </h4>
+                <div class="audit-meta">
+                  <span class="audit-time"><i class="pi pi-clock"></i> {{ request.requestedAt | date:'medium' }}</span>
+                  <span class="audit-id">ID: #{{ request.id }}</span>
+                </div>
+              </div>
+              
+              <div class="audit-details">
+                <div class="detail-row">
+                  <span class="detail-label"><i class="pi pi-key"></i> Access Level:</span>
+                  <span class="detail-value access-level">{{ request.requestedAccessLevel || 'read' }}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label"><i class="pi pi-file-edit"></i> Justification:</span>
+                  <span class="detail-value justification">{{ request.justification || 'No justification provided' }}</span>
+                </div>
+                
+                <div *ngIf="request.status !== 'PENDING'" class="audit-response">
+                  <div class="detail-row">
+                    <span class="detail-label"><i class="pi pi-info-circle"></i> Final Status:</span>
+                    <span class="detail-value status" [class]="'status-' + request.status.toLowerCase()">{{ request.status }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="audit-actions">
+              <button class="view-details-btn" (click)="viewAuditDetails(request)" title="View full details">
+                <i class="pi pi-search"></i> Details
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <ng-template #noAuditEntries>
+          <div class="empty-state">
+            <div class="empty-icon"><i class="pi pi-inbox"></i></div>
+            <h3>No audit entries found</h3>
+            <p *ngIf="hasActiveFilters()">Try adjusting your filters to see more results.</p>
+            <p *ngIf="!hasActiveFilters()">No access requests have been made for this team yet.</p>
+            <button *ngIf="hasActiveFilters()" class="clear-filters-btn" (click)="clearAuditFilters()">
+              <i class="pi pi-trash"></i> Clear All Filters
+            </button>
+          </div>
+        </ng-template>
+        
+        <!-- Pagination -->
+        <div class="audit-pagination" *ngIf="filteredAuditRequests.length > auditPagination.pageSize">
+          <div class="pagination-info">
+            <span>Showing {{ getPaginationStart() }}-{{ getPaginationEnd() }} of {{ filteredAuditRequests.length }} entries</span>
+          </div>
+          
+          <div class="pagination-controls">
+            <button class="page-btn" 
+                    [disabled]="auditPagination.currentPage === 1" 
+                    (click)="goToFirstPage()" 
+                    title="First page">
+              <i class="pi pi-step-backward"></i>
+            </button>
+            <button class="page-btn" 
+                    [disabled]="auditPagination.currentPage === 1" 
+                    (click)="goToPreviousPage()" 
+                    title="Previous page">
+              <i class="pi pi-chevron-left"></i>
+            </button>
+            
+            <div class="page-numbers">
+              <button *ngFor="let page of getVisiblePages()" 
+                      class="page-number" 
+                      [class.active]="page === auditPagination.currentPage"
+                      (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            </div>
+            
+            <button class="page-btn" 
+                    [disabled]="auditPagination.currentPage === getTotalPages()" 
+                    (click)="goToNextPage()" 
+                    title="Next page">
+              <i class="pi pi-chevron-right"></i>
+            </button>
+            <button class="page-btn" 
+                    [disabled]="auditPagination.currentPage === getTotalPages()" 
+                    (click)="goToLastPage()" 
+                    title="Last page">
+              <i class="pi pi-step-forward"></i>
+            </button>
+          </div>
+          
+          <div class="page-jump">
+            <label>Go to page:</label>
+            <input type="number" 
+                   [(ngModel)]="jumpToPage" 
+                   (keyup.enter)="jumpToPageNumber()" 
+                   [min]="1" 
+                   [max]="getTotalPages()" 
+                   class="page-input">
+            <button class="jump-btn" (click)="jumpToPageNumber()">Go</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </main>
+    </div>
+  </div>
+
+  <!-- Add Resource Modal -->
+  <div class="modal-overlay" *ngIf="showAddResourceModal" (click)="closeAddResourceModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Add {{ selectedAccessType === 'COMMON' ? 'Common' : 'Manager Controlled' }} Resource</h3>
+        <button class="close-btn" (click)="closeAddResourceModal()">×</button>
+      </div>
+      
+      <form [formGroup]="addResourceForm" (ngSubmit)="onAddResource()">
+        <div class="form-group">
+          <label for="name">Resource Name *</label>
+          <input type="text" id="name" formControlName="name" class="form-control" placeholder="Enter resource name">
+        </div>
+        
+        <div class="form-group">
+          <label for="description">Description *</label>
+          <textarea id="description" formControlName="description" class="form-control" rows="3" placeholder="Describe the resource"></textarea>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="type">Type *</label>
+            <select id="type" formControlName="type" class="form-control">
+              <option value="DATABASE">Database</option>
+              <option value="API">API</option>
+              <option value="REST_API">REST API</option>
+              <option value="GRAPHQL_API">GraphQL API</option>
+              <option value="SERVICE">Service</option>
+              <option value="TOOL">Tool</option>
+              <option value="DOCUMENT">Document</option>
+              <option value="PDF">PDF</option>
+              <option value="DOC">DOC</option>
+              <option value="DOCX">DOCX</option>
+              <option value="XLS">XLS</option>
+              <option value="XLSX">XLSX</option>
+              <option value="PPT">PPT</option>
+              <option value="PPTX">PPTX</option>
+              <option value="TXT">TXT</option>
+              <option value="RTF">RTF</option>
+              <option value="ODT">ODT</option>
+              <option value="ODS">ODS</option>
+              <option value="ODP">ODP</option>
+              <option value="JPG">JPG</option>
+              <option value="JPEG">JPEG</option>
+              <option value="PNG">PNG</option>
+              <option value="GIF">GIF</option>
+              <option value="BMP">BMP</option>
+              <option value="TIFF">TIFF</option>
+              <option value="SVG">SVG</option>
+              <option value="WEBP">WEBP</option>
+              <option value="ICO">ICO</option>
+              <option value="MP4">MP4</option>
+              <option value="AVI">AVI</option>
+              <option value="MOV">MOV</option>
+              <option value="WMV">WMV</option>
+              <option value="FLV">FLV</option>
+              <option value="WEBM">WEBM</option>
+              <option value="MKV">MKV</option>
+              <option value="MPEG">MPEG</option>
+              <option value="MPG">MPG</option>
+              <option value="MP3">MP3</option>
+              <option value="WAV">WAV</option>
+              <option value="FLAC">FLAC</option>
+              <option value="AAC">AAC</option>
+              <option value="OGG">OGG</option>
+              <option value="WMA">WMA</option>
+              <option value="M4A">M4A</option>
+              <option value="ZIP">ZIP</option>
+              <option value="RAR">RAR</option>
+              <option value="TAR">TAR</option>
+              <option value="GZ">GZ</option>
+              <option value="BZ2">BZ2</option>
+              <option value="SEVEN_Z">7Z</option>
+              <option value="JAVA">JAVA</option>
+              <option value="JAVASCRIPT">JavaScript</option>
+              <option value="PYTHON">Python</option>
+              <option value="HTML">HTML</option>
+              <option value="CSS">CSS</option>
+              <option value="XML">XML</option>
+              <option value="JSON">JSON</option>
+              <option value="YAML">YAML</option>
+              <option value="SQL">SQL</option>
+              <option value="SH">Shell Script</option>
+              <option value="BAT">Batch File</option>
+              <option value="GITHUB_LINK">GitHub Link</option>
+              <option value="GITLAB_LINK">GitLab Link</option>
+              <option value="BITBUCKET_LINK">Bitbucket Link</option>
+              <option value="URL">URL</option>
+              <option value="CLOUD_SERVICE">Cloud Service</option>
+              <option value="AWS_S3">AWS S3</option>
+              <option value="GOOGLE_DRIVE">Google Drive</option>
+              <option value="DROPBOX">Dropbox</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="category">Category *</label>
+            <select id="category" formControlName="category" class="form-control">
+              <option value="DATABASE">Database Resources</option>
+              <option value="API">API Resources</option>
+              <option value="DOCUMENTATION">Documentation</option>
+              <option value="REPOSITORY">Code Repositories</option>
+              <option value="EXTERNAL_LINKS">External Links</option>
+              <option value="CLOUD_SERVICES">Cloud Services</option>
+              <option value="DOCUMENTS">Documents</option>
+              <option value="IMAGES">Images</option>
+              <option value="VIDEOS">Videos</option>
+              <option value="AUDIO">Audio Files</option>
+              <option value="ARCHIVES">Archive Files</option>
+              <option value="CODE_FILES">Code Files</option>
+              <option value="MEDIA">Media Files</option>
+              <option value="OTHER">Other Resources</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="upload-mode-selector">
+          <label>Resource Type:</label>
+          <div class="mode-buttons">
+            <button type="button" 
+                    class="mode-btn" 
+                    [class.active]="uploadMode === 'url'"
+                    (click)="setUploadMode('url')">
+              <i class="pi pi-link"></i> URL/Link
+            </button>
+            <button type="button" 
+                    class="mode-btn" 
+                    [class.active]="uploadMode === 'file'"
+                    (click)="setUploadMode('file')">
+              <i class="pi pi-upload"></i> File Upload
+            </button>
+          </div>
+        </div>
+        
+        <div class="form-group" *ngIf="uploadMode === 'url'">
+          <label for="resourceUrl">Resource URL *</label>
+          <input type="url" id="resourceUrl" formControlName="resourceUrl" class="form-control" placeholder="https://example.com/resource">
+        </div>
+        
+        <div class="form-group" *ngIf="uploadMode === 'file'">
+          <label for="file">Select File *</label>
+          <input type="file" id="file" (change)="onFileSelected($event)" class="form-control">
+          <div class="file-info" *ngIf="selectedFile">
+            <p>Selected: {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})</p>
+          </div>
+        </div>
+        
+        <div class="form-group" *ngIf="selectedAccessType === 'MANAGER_CONTROLLED' || addResourceForm.get('accessType')?.value === 'MANAGER_CONTROLLED'">
+          <label for="allowedUserGroups">Allowed User Groups</label>
+          <select id="allowedUserGroups" formControlName="allowedUserGroups" class="form-control">
+            <option value="">Select user groups (optional)</option>
+            <option value="dev">dev</option>
+            <option value="test">test</option>
+            <option value="QA">QA</option>
+          </select>
+          <div class="form-help">Select user groups that can access this resource automatically. Leave empty for manager approval required.</div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeAddResourceModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="addResourceForm.invalid || (uploadMode === 'file' && !selectedFile)">
+            Add Resource
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Resource Access Modal -->
+  <div class="modal-overlay" *ngIf="showResourceAccessModal" (click)="closeResourceAccessModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Resource Access - {{ selectedResource?.name }}</h3>
+        <button class="close-btn" (click)="closeResourceAccessModal()">×</button>
+      </div>
+      
+      <div class="access-content">
+        <div class="loading" *ngIf="loadingResourceAccess">Loading access information...</div>
+        
+        <div class="access-info" *ngIf="!loadingResourceAccess">
+          <div class="user-groups-section" *ngIf="selectedResource?.allowedUserGroups">
+            <h4>Automatic Access Groups</h4>
+            <div class="group-badges">
+              <span class="group-badge" *ngFor="let group of getGroupsArray(selectedResource.allowedUserGroups)">
+                {{ group }} users
+              </span>
+            </div>
+          </div>
+          
+          <div class="users-section">
+            <h4 *ngIf="selectedResource?.allowedUserGroups">Individual Access</h4>
+            <div class="access-list">
+              <div class="access-item" *ngFor="let access of resourceAccess">
+                <div class="user-info">
+                  <div class="user-avatar">{{ access.username ? access.username.charAt(0).toUpperCase() : 'U' }}</div>
+                  <div class="user-details">
+                    <h4>{{ access.username }}</h4>
+                    <p>{{ access.accessLevel }}</p>
+                  </div>
+                </div>
+                <div class="access-actions">
+                  <span class="status-badge granted">Access Granted</span>
+                  <button *ngIf="isManagerOrAdmin() && access.username !== currentUsername" class="btn btn-sm btn-danger revoke-btn" (click)="revokeUserAccess(access.userId)" title="Revoke Access">
+                    <i class="pi pi-times"></i> Revoke
+                  </button>
+                </div>
+              </div>
+              
+              <div class="empty-state" *ngIf="resourceAccess.length === 0 && (!selectedResource?.allowedUserGroups || selectedResource?.allowedUserGroups === '')">
+                <p>No users have access to this resource yet.</p>
+              </div>
+              <div class="empty-state" *ngIf="resourceAccess.length === 0 && selectedResource?.allowedUserGroups">
+                <p>No individual users have been granted access. Access is available through user groups above.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Request Access Modal -->
+  <div class="modal-overlay" *ngIf="showRequestAccessModal" (click)="closeRequestAccessModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Request Access - {{ selectedResource?.name }}</h3>
+        <button class="close-btn" (click)="closeRequestAccessModal()">×</button>
+      </div>
+      
+      <form [formGroup]="requestAccessForm" (ngSubmit)="onRequestAccess()">
+        <div class="resource-info">
+          <p><strong>Resource:</strong> {{ selectedResource?.name }}</p>
+          <p><strong>Description:</strong> {{ selectedResource?.description }}</p>
+          <p><strong>Type:</strong> {{ selectedResource?.type }}</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="justification">Justification *</label>
+          <textarea id="justification" 
+                    formControlName="justification" 
+                    class="form-control" 
+                    rows="4" 
+                    placeholder="Please explain why you need access to this resource (minimum 10 characters)"></textarea>
+          <div class="form-help">Provide a clear justification for why you need access to this resource.</div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeRequestAccessModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="requestAccessForm.invalid">
+            Submit Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reject Request Modal -->
+  <div class="modal-overlay" *ngIf="showRejectModal" (click)="closeRejectModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Reject Access Request</h3>
+        <button class="close-btn" (click)="closeRejectModal()">×</button>
+      </div>
+      
+      <form [formGroup]="rejectForm" (ngSubmit)="submitRejection()">
+        <div class="request-info" *ngIf="selectedRequest">
+          <p><strong>User:</strong> {{ selectedRequest.userName || selectedRequest.requestedBy }}</p>
+          <p><strong>Resource:</strong> {{ selectedRequest.resourceName }}</p>
+          <p><strong>Justification:</strong> {{ selectedRequest.justification }}</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="rejectionReason">Rejection Reason *</label>
+          <textarea id="rejectionReason" 
+                    formControlName="rejectionReason" 
+                    class="form-control" 
+                    rows="4" 
+                    placeholder="Please provide a reason for rejecting this request (minimum 10 characters)"></textarea>
+          <div class="form-help">Provide a clear reason for rejecting this access request.</div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeRejectModal()">Cancel</button>
+          <button type="submit" class="btn btn-danger" [disabled]="rejectForm.invalid">
+            Reject Request
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Request Details Modal -->
+  <div class="modal-overlay" *ngIf="showRequestDetailsModal" (click)="closeRequestDetailsModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Request Details</h3>
+        <button class="close-btn" (click)="closeRequestDetailsModal()">×</button>
+      </div>
+      
+      <div class="request-details-content" *ngIf="selectedRequestDetails">
+        <div class="detail-section">
+          <h4>Request Information</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>User:</label>
+              <span>{{ selectedRequestDetails.userName || selectedRequestDetails.requestedBy }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Resource:</label>
+              <span>{{ selectedRequestDetails.resourceName }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Access Level:</label>
+              <span class="access-level">{{ selectedRequestDetails.requestedAccessLevel || 'read' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Requested On:</label>
+              <span>{{ selectedRequestDetails.requestedAt | date:'medium' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Status:</label>
+              <span class="status-badge" [ngClass]="{
+                'status-pending': selectedRequestDetails.status === 'PENDING',
+                'status-approved': selectedRequestDetails.status === 'APPROVED',
+                'status-rejected': selectedRequestDetails.status === 'REJECTED'
+              }">{{ selectedRequestDetails.status }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="detail-section">
+          <h4>Justification</h4>
+          <p class="justification-text">{{ selectedRequestDetails.justification || 'No justification provided' }}</p>
+        </div>
+        
+        <div class="detail-section" *ngIf="selectedRequestDetails.status === 'REJECTED'">
+          <h4>Rejection Reason</h4>
+          <p class="rejection-text">{{ selectedRequestDetails.approverComments || 'No reason provided' }}</p>
+        </div>
+        
+        <div class="detail-section" *ngIf="selectedRequestDetails.status === 'APPROVED'">
+          <h4>Approval Information</h4>
+          <p class="approval-text">Request has been approved and access has been granted.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Access Modal -->
+  <div class="modal-overlay" *ngIf="showEditAccessModal" (click)="closeEditAccessModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Edit Access Settings - {{ selectedResource?.name }}</h3>
+        <button class="close-btn" (click)="closeEditAccessModal()">×</button>
+      </div>
+      
+      <form [formGroup]="editAccessForm" (ngSubmit)="onUpdateAccessSettings()">
+        <div class="resource-info" *ngIf="selectedResource">
+          <p><strong>Resource:</strong> {{ selectedResource.name }}</p>
+          <p><strong>Type:</strong> {{ selectedResource.type }}</p>
+          <p><strong>Current Access:</strong> {{ selectedResource.accessType === 'COMMON' ? 'Common (All team members)' : 'Manager Controlled' }}</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="editAccessType">Access Type *</label>
+          <select id="editAccessType" formControlName="accessType" class="form-control">
+            <option value="COMMON">Common (All team members can access)</option>
+            <option value="MANAGER_CONTROLLED">Manager Controlled (Requires approval)</option>
+          </select>
+          <div class="form-help">Choose who can access this resource</div>
+        </div>
+        
+        <div class="form-group" *ngIf="editAccessForm.get('accessType')?.value === 'MANAGER_CONTROLLED'">
+          <label for="editAllowedUserGroups">Allowed User Groups (Optional)</label>
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" (change)="toggleUserGroup('dev')" [checked]="isGroupSelected('dev')">
+              <span>dev users</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" (change)="toggleUserGroup('test')" [checked]="isGroupSelected('test')">
+              <span>test users</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" (change)="toggleUserGroup('QA')" [checked]="isGroupSelected('QA')">
+              <span>QA users</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" (change)="toggleUserGroup('admin')" [checked]="isGroupSelected('admin')">
+              <span>admin users</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" (change)="toggleUserGroup('manager')" [checked]="isGroupSelected('manager')">
+              <span>manager users</span>
+            </label>
+          </div>
+          <div class="form-help">Select user groups that can access automatically without manager approval</div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeEditAccessModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="editAccessForm.invalid">
+            Update Access Settings
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<!-- Team Chat -->
+<div class="team-chat-overlay" *ngIf="showTeamChat" (click)="showTeamChat = false">
+  <div class="team-chat-container" (click)="$event.stopPropagation()">
+    <div class="chat-header">
+      <h3><i class="pi pi-comments"></i> Team Chat</h3>
+      <button class="close-chat" (click)="showTeamChat = false">×</button>
+    </div>
+    
+    <div class="chat-messages">
+      <div class="message" *ngFor="let msg of chatMessages" [class.own-message]="msg.isCurrentUser">
+        <div class="message-header">
+          <span class="sender">{{ msg.sender }}</span>
+          <span class="timestamp">{{ msg.timestamp | date:'short' }}</span>
+        </div>
+        <div class="message-content">{{ msg.message }}</div>
+      </div>
+    </div>
+    
+    <div class="chat-input">
+      <input type="text" 
+             [(ngModel)]="newMessage" 
+             (keypress)="onChatKeyPress($event)"
+             placeholder="Type a message..." 
+             class="message-input">
+      <button class="send-btn" (click)="sendMessage()" [disabled]="!newMessage.trim()">
+        <i class="pi pi-send"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-container" *ngIf="loading">
+  <div class="loading-spinner"></div>
+  <p>Loading team details...</p>
+</div>

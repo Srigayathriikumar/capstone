@@ -1,0 +1,20 @@
+<div class="metric-card" [class]="color" [class.loading]="loading">
+  <div class="metric-content">
+    <div class="metric-icon">
+      <i [class]="icon" *ngIf="icon"></i>
+    </div>
+    <div class="metric-details">
+      <h3 class="metric-title">{{ title }}</h3>
+      <div class="metric-value">{{ value }}</div>
+      <div class="metric-change" [class]="'change-' + changeType" *ngIf="change">
+        <i class="pi" [class]="getChangeIcon()"></i>
+        {{ change }}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Loading State -->
+  <div class="metric-loading" *ngIf="loading">
+    <div class="loading-spinner"></div>
+  </div>
+</div>

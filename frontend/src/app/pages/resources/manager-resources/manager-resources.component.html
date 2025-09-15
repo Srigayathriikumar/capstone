@@ -1,0 +1,488 @@
+<div class="team-details-container">
+  
+  <!-- Navigation Bar -->
+  <nav class="top-navbar">
+    <div class="navbar-left">
+      <button class="sidebar-toggle" (click)="toggleSidebar()">
+        <i class="pi pi-bars"></i>
+      </button>
+      <img src="logo.png" alt="TRAM Logo" class="navbar-logo">
+      <span class="navbar-title">TRAM Dashboard</span>
+      <div class="project-switcher-nav">
+        <select (change)="switchProject($event)" [value]="teamId" class="project-select-nav">
+          <option *ngFor="let project of allProjects" [value]="project.id">
+            {{ project.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <button class="nav-btn" title="User Details">
+        <i class="pi pi-user"></i>
+        <span>{{ currentUsername }}</span>
+      </button>
+      <div class="notification-container">
+        <button class="nav-btn" title="Notifications">
+          <i class="pi pi-bell"></i>
+        </button>
+      </div>
+      <button class="nav-btn logout" (click)="logout()" title="Logout">
+        <i class="pi pi-sign-out"></i>
+      </button>
+    </div>
+  </nav>
+  
+  <!-- Content wrapper for sidebar and main content -->
+  <div class="content-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" [class.hidden]="sidebarHidden">
+      <div class="sidebar-header">
+        <div class="team-info">
+          <div class="team-header-row">
+            <h2>{{ team?.name }}</h2>
+          </div>
+          <div class="status-container">
+            <select 
+              *ngIf="isManagerOrAdmin()" 
+              class="status-dropdown-sidebar" 
+              [value]="team?.status" 
+              (change)="updateTeamStatus(team?.id, $event)"
+            >
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="ARCHIVED">ARCHIVED</option>
+            </select>
+            <span 
+              *ngIf="!isManagerOrAdmin()" 
+              class="team-status" 
+              [class]="getStatusClass(team?.status || '')"
+            >
+              {{ team?.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button class="nav-item" (click)="setActiveTab('overview')">
+          <i class="pi pi-home"></i>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" (click)="setActiveTab('members')">
+          <i class="pi pi-users"></i>
+          <span>Members</span>
+        </button>
+        <div class="nav-group">
+          <div class="nav-group-header">
+            <i class="pi pi-folder"></i>
+            <span>Resources</span>
+          </div>
+          <div class="nav-subitems">
+            <button class="nav-subitem" (click)="navigateToCommonResources()">
+              <i class="pi pi-users"></i>
+              <span>Common Resources</span>
+            </button>
+            <button class="nav-subitem active">
+              <i class="pi pi-lock"></i>
+              <span>Manager Controlled</span>
+            </button>
+          </div>
+        </div>
+        <button class="nav-item" (click)="setActiveTab('requests')">
+          <i class="pi pi-key"></i>
+          <span>Access Requests</span>
+        </button>
+        <button class="nav-item" (click)="setActiveTab('uploads')">
+          <i class="pi pi-upload"></i>
+          <span>My Uploads</span>
+        </button>
+        <button class="nav-item" (click)="setActiveTab('audit')" *ngIf="isManagerOrAdmin()">
+          <i class="pi pi-chart-line"></i>
+          <span>Audit Log</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-content" [class.expanded]="sidebarHidden">
+      <header class="content-header">
+        <div class="header-left">
+          <h1>Manager Controlled Resources</h1>
+          <p>Resources requiring approval for access ({{ resources.length }} resources)</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" (click)="openAddResourceModal()">
+            <i class="pi pi-plus"></i> Add Resource
+          </button>
+        </div>
+      </header>
+
+      <div class="tab-content">
+        <div class="filters-section">
+    <div class="search-bar">
+      <input type="text" 
+             [(ngModel)]="searchTerm" 
+             (input)="onSearch()" 
+             placeholder="Search resources..." 
+             class="search-input">
+      <i class="pi pi-search search-icon"></i>
+    </div>
+    
+    <div class="access-filter-panel">
+      <div class="filter-switch-group">
+        <button class="filter-switch" 
+                [class.active]="accessFilter === 'all'"
+                (click)="setAccessFilter('all')">
+          <i class="pi pi-list"></i> All
+        </button>
+        <button class="filter-switch" 
+                [class.active]="accessFilter === 'locked'"
+                (click)="setAccessFilter('locked')">
+          <i class="pi pi-lock"></i> Locked
+        </button>
+        <button class="filter-switch" 
+                [class.active]="accessFilter === 'pending'"
+                (click)="setAccessFilter('pending')">
+          <i class="pi pi-clock"></i> Pending
+        </button>
+        <button class="filter-switch" 
+                [class.active]="accessFilter === 'open'"
+                (click)="setAccessFilter('open')">
+          <i class="pi pi-unlock"></i> Open
+        </button>
+      </div>
+    </div>
+    
+    <div class="filter-controls">
+      <select [(ngModel)]="selectedType" (change)="onSearch()" class="filter-select">
+        <option value="">All Types</option>
+        <option *ngFor="let type of getUniqueTypes()" [value]="type">{{ type }}</option>
+      </select>
+      
+      <select [(ngModel)]="selectedCategory" (change)="onSearch()" class="filter-select">
+        <option value="">All Categories</option>
+        <option *ngFor="let category of getUniqueCategories()" [value]="category">{{ category }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="resources-grid" *ngIf="!loading">
+    <div class="resource-card" *ngFor="let resource of paginatedResources">
+      <div class="resource-header">
+        <div class="resource-title-section">
+          <i class="file-icon {{ getFileIcon(resource) }}"></i>
+          <h3>{{ resource.name }}</h3>
+        </div>
+        <div class="resource-tags">
+          <span class="resource-type manager-controlled">{{ resource.type }}</span>
+          <span class="resource-category">{{ resource.category || 'OTHER' }}</span>
+        </div>
+      </div>
+      <p class="resource-description">{{ resource.description }}</p>
+      
+      <!-- File metadata display -->
+      <div class="resource-metadata" *ngIf="resource.filePath || resource.resourceUrl || resource.fileData">
+        <div class="metadata-item" *ngIf="resource.resourceUrl && hasApprovedAccess(resource)">
+          <span class="metadata-label">🔗 URL:</span>
+          <a [href]="resource.resourceUrl" target="_blank" class="resource-link">
+            {{ resource.resourceUrl.length > 50 ? (resource.resourceUrl | slice:0:50) + '...' : resource.resourceUrl }}
+          </a>
+        </div>
+        <div class="metadata-item" *ngIf="resource.resourceUrl && !hasApprovedAccess(resource)">
+          <span class="metadata-label">🔗 URL:</span>
+          <span class="locked-content">🔒 Access Required</span>
+        </div>
+        <div class="metadata-item" *ngIf="(resource.filePath || resource.fileData) && hasApprovedAccess(resource)">
+          <span class="metadata-label">📁 File:</span>
+          <span class="file-path">{{ resource.filePath ? resource.filePath.split('/').pop() : 'Database File' }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="(resource.filePath || resource.fileData) && !hasApprovedAccess(resource)">
+          <span class="metadata-label">📁 File:</span>
+          <span class="locked-content">🔒 Access Required</span>
+        </div>
+        <div class="metadata-item" *ngIf="resource.fileSize && hasApprovedAccess(resource)">
+          <span class="metadata-label">📊 Size:</span>
+          <span class="file-size">{{ formatFileSize(resource.fileSize) }}</span>
+        </div>
+      </div>
+      
+      <div class="resource-actions">
+        <!-- Manager/Admin Actions -->
+        <ng-container *ngIf="isManagerOrAdmin()">
+          <button class="btn btn-sm btn-primary" 
+                  *ngIf="canViewFile(resource)" 
+                  (click)="viewFile(resource)">
+            <i class="pi pi-eye"></i> View
+          </button>
+          <button class="btn btn-sm btn-secondary" 
+                  *ngIf="canViewFile(resource)" 
+                  (click)="downloadFile(resource)">
+            <i class="pi pi-download"></i> Download
+          </button>
+          <button class="btn btn-sm btn-info" 
+                  (click)="showResourceAccess(resource)">
+            <i class="pi pi-users"></i> Access
+          </button>
+        </ng-container>
+        
+        <!-- Team Member Actions -->
+        <ng-container *ngIf="!isManagerOrAdmin()">
+          <!-- Show access buttons if user has approved access -->
+          <ng-container *ngIf="hasApprovedAccess(resource)">
+            <button class="btn btn-sm btn-primary" 
+                    *ngIf="canViewFile(resource)" 
+                    (click)="viewFile(resource)">
+              <i class="pi pi-eye"></i> View
+            </button>
+            <button class="btn btn-sm btn-secondary" 
+                    *ngIf="canViewFile(resource)" 
+                    (click)="downloadFile(resource)">
+              <i class="pi pi-download"></i> Download
+            </button>
+            <span class="access-status owner" *ngIf="isResourceCreator(resource)">
+              <i class="pi pi-user"></i> Owner
+            </span>
+            <span class="access-status approved" *ngIf="!isResourceCreator(resource)">
+              <i class="pi pi-check"></i> Access Granted
+            </span>
+          </ng-container>
+          
+          <!-- Show pending status if request is pending -->
+          <ng-container *ngIf="hasPendingRequest(resource) && !hasApprovedAccess(resource)">
+            <span class="access-status pending"><i class="pi pi-clock"></i> Request Pending</span>
+          </ng-container>
+          
+          <!-- Show request access button if no request exists -->
+          <ng-container *ngIf="!hasPendingRequest(resource) && !hasApprovedAccess(resource)">
+            <button class="btn btn-sm btn-warning" 
+                    (click)="openRequestAccessModal(resource)">
+              <i class="pi pi-lock"></i> Request Access
+            </button>
+          </ng-container>
+        </ng-container>
+      </div>
+      
+      <div class="resource-meta">
+        <span class="access-required" *ngIf="!isResourceCreator(resource) && !isManagerOrAdmin() && !hasApprovedAccess(resource)">Approval Required</span>
+        <span class="owner-badge" *ngIf="isResourceCreator(resource)">Your Upload</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      <i class="pi pi-chevron-left"></i>
+    </button>
+    <span class="page-info">{{ currentPage }} of {{ totalPages }}</span>
+    <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      <i class="pi pi-chevron-right"></i>
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading resources...</div>
+    <div class="empty-state" *ngIf="!loading && paginatedResources.length === 0">
+      <h3>No resources found</h3>
+      <p>No manager controlled resources match your current filters.</p>
+    </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Resource Modal -->
+<div class="modal-overlay" *ngIf="showAddResourceModal" (click)="closeAddResourceModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Add Manager Controlled Resource</h3>
+      <button class="close-btn" (click)="closeAddResourceModal()">×</button>
+    </div>
+    
+    <form [formGroup]="addResourceForm" (ngSubmit)="onAddResource()">
+      <div class="form-group">
+        <label>Resource Name *</label>
+        <input type="text" formControlName="name" class="form-control">
+      </div>
+      
+      <div class="form-group">
+        <label>Description *</label>
+        <textarea formControlName="description" class="form-control" rows="3"></textarea>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type *</label>
+          <select formControlName="type" class="form-control">
+            <option value="DATABASE">Database</option>
+            <option value="API">API</option>
+            <option value="REST_API">REST API</option>
+            <option value="GRAPHQL_API">GraphQL API</option>
+            <option value="SERVICE">Service</option>
+            <option value="TOOL">Tool</option>
+            <option value="PDF">PDF</option>
+            <option value="DOC">DOC</option>
+            <option value="DOCX">DOCX</option>
+            <option value="XLS">XLS</option>
+            <option value="XLSX">XLSX</option>
+            <option value="PPT">PPT</option>
+            <option value="PPTX">PPTX</option>
+            <option value="TXT">TXT</option>
+            <option value="JPG">JPG</option>
+            <option value="JPEG">JPEG</option>
+            <option value="PNG">PNG</option>
+            <option value="GIF">GIF</option>
+            <option value="MP4">MP4</option>
+            <option value="AVI">AVI</option>
+            <option value="MOV">MOV</option>
+            <option value="MP3">MP3</option>
+            <option value="WAV">WAV</option>
+            <option value="ZIP">ZIP</option>
+            <option value="RAR">RAR</option>
+            <option value="JAVA">JAVA</option>
+            <option value="JAVASCRIPT">JavaScript</option>
+            <option value="PYTHON">Python</option>
+            <option value="HTML">HTML</option>
+            <option value="CSS">CSS</option>
+            <option value="XML">XML</option>
+            <option value="JSON">JSON</option>
+            <option value="YAML">YAML</option>
+            <option value="SQL">SQL</option>
+            <option value="GITHUB_LINK">GitHub Link</option>
+            <option value="GITLAB_LINK">GitLab Link</option>
+            <option value="URL">URL</option>
+            <option value="CLOUD_SERVICE">Cloud Service</option>
+            <option value="AWS_S3">AWS S3</option>
+            <option value="GOOGLE_DRIVE">Google Drive</option>
+            <option value="DROPBOX">Dropbox</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Category *</label>
+          <select formControlName="category" class="form-control">
+            <option value="DATABASE">Database Resources</option>
+            <option value="API">API Resources</option>
+            <option value="DOCUMENTATION">Documentation</option>
+            <option value="REPOSITORY">Code Repositories</option>
+            <option value="EXTERNAL_LINKS">External Links</option>
+            <option value="CLOUD_SERVICES">Cloud Services</option>
+            <option value="DOCUMENTS">Documents</option>
+            <option value="IMAGES">Images</option>
+            <option value="VIDEOS">Videos</option>
+            <option value="AUDIO">Audio Files</option>
+            <option value="ARCHIVES">Archive Files</option>
+            <option value="CODE_FILES">Code Files</option>
+            <option value="MEDIA">Media Files</option>
+            <option value="OTHER">Other Resources</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="upload-mode-selector">
+        <button type="button" class="mode-btn" [class.active]="uploadMode === 'url'" (click)="setUploadMode('url')">
+          <i class="pi pi-link"></i> URL
+        </button>
+        <button type="button" class="mode-btn" [class.active]="uploadMode === 'file'" (click)="setUploadMode('file')">
+          <i class="pi pi-upload"></i> File
+        </button>
+      </div>
+      
+      <div class="form-group" *ngIf="uploadMode === 'url'">
+        <label>Resource URL *</label>
+        <input type="url" formControlName="resourceUrl" class="form-control">
+      </div>
+      
+      <div class="form-group" *ngIf="uploadMode === 'file'">
+        <label>Select File *</label>
+        <input type="file" (change)="onFileSelected($event)" class="form-control">
+      </div>
+      
+      <div class="form-group">
+        <label for="allowedUserGroups">Allowed User Groups</label>
+        <select id="allowedUserGroups" formControlName="allowedUserGroups" class="form-control">
+          <option value="">Select user groups (optional)</option>
+          <option value="dev">dev</option>
+          <option value="test">test</option>
+          <option value="QA">QA</option>
+        </select>
+        <div class="form-help">Select user groups that can access this resource automatically. Leave empty for manager approval required.</div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeAddResourceModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="addResourceForm.invalid">Add Resource</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Resource Access Modal -->
+<div class="modal-overlay" *ngIf="showResourceAccessModal" (click)="closeResourceAccessModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Resource Access - {{ selectedResource?.name }}</h3>
+      <button class="close-btn" (click)="closeResourceAccessModal()">×</button>
+    </div>
+    
+    <div class="access-content">
+      <div class="loading" *ngIf="loadingResourceAccess">Loading access information...</div>
+      
+      <div class="access-list" *ngIf="!loadingResourceAccess">
+        <div class="access-item" *ngFor="let access of resourceAccess">
+          <div class="user-info">
+            <div class="user-avatar">{{ access.username ? access.username.charAt(0).toUpperCase() : 'U' }}</div>
+            <div class="user-details">
+              <h4>{{ access.username }}</h4>
+              <p>{{ access.accessLevel }}</p>
+            </div>
+          </div>
+          <div class="access-actions">
+            <span class="status-badge granted">Access Granted</span>
+            <button *ngIf="isManagerOrAdmin() && access.username !== teamService.getCurrentUsername()" class="btn btn-sm btn-danger revoke-btn" (click)="revokeUserAccess(access.userId)" title="Revoke Access">
+              <i class="pi pi-times"></i> Revoke
+            </button>
+          </div>
+        </div>
+        
+        <div class="empty-state" *ngIf="resourceAccess.length === 0">
+          <p>No users have access to this resource yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Request Access Modal -->
+<div class="modal-overlay" *ngIf="showRequestAccessModal" (click)="closeRequestAccessModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Request Access - {{ selectedResource?.name }}</h3>
+      <button class="close-btn" (click)="closeRequestAccessModal()">×</button>
+    </div>
+    
+    <form [formGroup]="requestAccessForm" (ngSubmit)="onRequestAccess()">
+      <div class="resource-info">
+        <p><strong>Resource:</strong> {{ selectedResource?.name }}</p>
+        <p><strong>Description:</strong> {{ selectedResource?.description }}</p>
+        <p><strong>Type:</strong> {{ selectedResource?.type }}</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="justification">Justification *</label>
+        <textarea id="justification" 
+                  formControlName="justification" 
+                  class="form-control" 
+                  rows="4" 
+                  placeholder="Please explain why you need access to this resource"></textarea>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeRequestAccessModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="requestAccessForm.invalid">
+          Submit Request
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,103 @@
+/* Locked Resource Styles */
+.locked-resource {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  color: #856404;
+}
+
+.locked-resource .pi-lock {
+  font-size: 14px;
+  color: #f39c12;
+}
+
+.locked-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #856404;
+}
+
+.locked-overlay {
+  position: relative;
+  background: rgba(248, 249, 250, 0.95);
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-icon {
+  font-size: 24px;
+  color: #6c757d;
+  margin-bottom: 8px;
+}
+
+.lock-message h4 {
+  margin: 0 0 4px 0;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.lock-message p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 12px;
+}
+
+/* Disabled/Locked Resource Card Styling */
+.resource-card.locked {
+  opacity: 0.7;
+  position: relative;
+}
+
+.resource-card.locked::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.resource-card.locked .lock-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #f8d7da;
+  color: #721c24;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Metadata locked text */
+.metadata-item .locked-text {
+  color: #6c757d;
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Request access button styling */
+.locked-resource .btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 3px;
+}

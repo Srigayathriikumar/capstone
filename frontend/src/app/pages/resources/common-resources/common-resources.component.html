@@ -1,0 +1,293 @@
+<div class="team-details-container">
+  
+  <!-- Navigation Bar -->
+  <nav class="top-navbar">
+    <div class="navbar-left">
+      <button class="sidebar-toggle" (click)="toggleSidebar()">
+        <i class="pi pi-bars"></i>
+      </button>
+      <img src="logo.png" alt="TRAM Logo" class="navbar-logo">
+      <span class="navbar-title">TRAM Dashboard</span>
+      <div class="project-switcher-nav">
+        <select (change)="switchProject($event)" [value]="teamId" class="project-select-nav">
+          <option *ngFor="let project of allProjects" [value]="project.id">
+            {{ project.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <button class="nav-btn" title="User Details">
+        <i class="pi pi-user"></i>
+        <span>{{ currentUsername }}</span>
+      </button>
+      <div class="notification-container">
+        <button class="nav-btn" title="Notifications">
+          <i class="pi pi-bell"></i>
+        </button>
+      </div>
+      <button class="nav-btn logout" (click)="logout()" title="Logout">
+        <i class="pi pi-sign-out"></i>
+      </button>
+    </div>
+  </nav>
+  
+  <!-- Content wrapper for sidebar and main content -->
+  <div class="content-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" [class.hidden]="sidebarHidden">
+      <div class="sidebar-header">
+        <div class="team-info">
+          <div class="team-header-row">
+            <h2>{{ team?.name }}</h2>
+          </div>
+          <div class="status-container">
+            <select 
+              *ngIf="isManagerOrAdmin()" 
+              class="status-dropdown-sidebar" 
+              [value]="team?.status" 
+              (change)="updateTeamStatus(team?.id, $event)"
+            >
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="ARCHIVED">ARCHIVED</option>
+            </select>
+            <span 
+              *ngIf="!isManagerOrAdmin()" 
+              class="team-status" 
+              [class]="getStatusClass(team?.status || '')"
+            >
+              {{ team?.status }}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button class="nav-item" (click)="setActiveTab('overview')">
+          <i class="pi pi-home"></i>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" (click)="setActiveTab('members')">
+          <i class="pi pi-users"></i>
+          <span>Members</span>
+        </button>
+        <div class="nav-group">
+          <div class="nav-group-header">
+            <i class="pi pi-folder"></i>
+            <span>Resources</span>
+          </div>
+          <div class="nav-subitems">
+            <button class="nav-subitem active">
+              <i class="pi pi-users"></i>
+              <span>Common Resources</span>
+            </button>
+            <button class="nav-subitem" (click)="navigateToManagerResources()">
+              <i class="pi pi-lock"></i>
+              <span>Manager Controlled</span>
+            </button>
+          </div>
+        </div>
+        <button class="nav-item" (click)="setActiveTab('requests')">
+          <i class="pi pi-key"></i>
+          <span>Access Requests</span>
+        </button>
+        <button class="nav-item" (click)="setActiveTab('uploads')">
+          <i class="pi pi-upload"></i>
+          <span>My Uploads</span>
+        </button>
+        <button class="nav-item" (click)="setActiveTab('audit')" *ngIf="isManagerOrAdmin()">
+          <i class="pi pi-chart-line"></i>
+          <span>Audit Log</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-content" [class.expanded]="sidebarHidden">
+      <header class="content-header">
+        <div class="header-left">
+          <h1>Common Resources</h1>
+          <p>Resources accessible by all team members ({{ resources.length }} resources)</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" (click)="openAddResourceModal()">
+            <i class="pi pi-plus"></i> Add Resource
+          </button>
+        </div>
+      </header>
+
+      <div class="tab-content">
+        <div class="filters-section">
+    <div class="search-bar">
+      <input type="text" 
+             [(ngModel)]="searchTerm" 
+             (input)="onSearch()" 
+             placeholder="Search resources..." 
+             class="search-input">
+      <i class="pi pi-search search-icon"></i>
+    </div>
+    
+    <div class="filter-controls">
+      <select [(ngModel)]="selectedType" (change)="onSearch()" class="filter-select">
+        <option value="">All Types</option>
+        <option *ngFor="let type of getUniqueTypes()" [value]="type">{{ type }}</option>
+      </select>
+      
+      <select [(ngModel)]="selectedCategory" (change)="onSearch()" class="filter-select">
+        <option value="">All Categories</option>
+        <option *ngFor="let category of getUniqueCategories()" [value]="category">{{ category }}</option>
+      </select>
+    </div>
+    
+    <div class="sort-controls">
+      <button class="sort-btn" (click)="onSort('name')" 
+              [class.active]="sortField === 'name'">
+        Name <i [class]="sortField === 'name' && sortDirection === 'desc' ? 'pi pi-sort-down' : 'pi pi-sort-up'"></i>
+      </button>
+      <button class="sort-btn" (click)="onSort('type')" 
+              [class.active]="sortField === 'type'">
+        Type <i [class]="sortField === 'type' && sortDirection === 'desc' ? 'pi pi-sort-down' : 'pi pi-sort-up'"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="resources-grid" *ngIf="!loading">
+    <div class="resource-card" *ngFor="let resource of paginatedResources">
+      <div class="resource-header">
+        <div class="resource-title-section">
+          <i class="file-icon {{ getFileIcon(resource) }}"></i>
+          <h3>{{ resource.name }}</h3>
+        </div>
+        <div class="resource-tags">
+          <span class="resource-type">{{ resource.type }}</span>
+          <span class="resource-category">{{ resource.category || 'OTHER' }}</span>
+        </div>
+      </div>
+      <p class="resource-description">{{ resource.description }}</p>
+      
+      <!-- File metadata display -->
+      <div class="resource-metadata" *ngIf="resource.filePath || resource.resourceUrl || resource.fileData">
+        <div class="metadata-item" *ngIf="resource.resourceUrl">
+          <span class="metadata-label">🔗 URL:</span>
+          <a [href]="resource.resourceUrl" target="_blank" class="resource-link">
+            {{ resource.resourceUrl.length > 50 ? (resource.resourceUrl | slice:0:50) + '...' : resource.resourceUrl }}
+          </a>
+        </div>
+        <div class="metadata-item" *ngIf="resource.filePath || resource.fileData">
+          <span class="metadata-label">📁 File:</span>
+          <span class="file-path">{{ resource.filePath ? resource.filePath.split('/').pop() : 'Database File' }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="resource.fileSize">
+          <span class="metadata-label">📊 Size:</span>
+          <span class="file-size">{{ formatFileSize(resource.fileSize) }}</span>
+        </div>
+      </div>
+      
+      <div class="resource-actions">
+        <button class="btn btn-sm btn-primary" 
+                *ngIf="canViewFile(resource)" 
+                (click)="viewFile(resource)">
+          <i class="pi pi-eye"></i> View
+        </button>
+        <button class="btn btn-sm btn-secondary" 
+                *ngIf="canViewFile(resource)" 
+                (click)="downloadFile(resource)">
+          <i class="pi pi-download"></i> Download
+        </button>
+        <button class="btn btn-sm btn-info" 
+                *ngIf="isManagerOrAdmin()" 
+                (click)="showResourceAccess(resource)">
+          <i class="pi pi-users"></i> Access
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+      <i class="pi pi-chevron-left"></i>
+    </button>
+    <span class="page-info">{{ currentPage }} of {{ totalPages }}</span>
+    <button class="page-btn" [disabled]="currentPage === totalPages" (click)="goToPage(currentPage + 1)">
+      <i class="pi pi-chevron-right"></i>
+    </button>
+  </div>
+
+  <div class="loading" *ngIf="loading">Loading resources...</div>
+    <div class="empty-state" *ngIf="!loading && paginatedResources.length === 0">
+      <h3>No resources found</h3>
+      <p>No common resources match your current filters.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Resource Modal -->
+<div class="modal-overlay" *ngIf="showAddResourceModal" (click)="closeAddResourceModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Add Common Resource</h3>
+      <button class="close-btn" (click)="closeAddResourceModal()">×</button>
+    </div>
+    
+    <form [formGroup]="addResourceForm" (ngSubmit)="onAddResource()">
+      <div class="form-group">
+        <label>Resource Name *</label>
+        <input type="text" formControlName="name" class="form-control">
+      </div>
+      
+      <div class="form-group">
+        <label>Description *</label>
+        <textarea formControlName="description" class="form-control" rows="3"></textarea>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Type *</label>
+          <select formControlName="type" class="form-control">
+            <option value="OTHER">Other</option>
+            <option value="DATABASE">Database</option>
+            <option value="API">API</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Category *</label>
+          <select formControlName="category" class="form-control">
+            <option value="DOCUMENTS">Documents</option>
+            <option value="DATABASES">Databases</option>
+            <option value="APIS">APIs</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="upload-mode-selector">
+        <button type="button" class="mode-btn" [class.active]="uploadMode === 'url'" (click)="setUploadMode('url')">
+          <i class="pi pi-link"></i> URL
+        </button>
+        <button type="button" class="mode-btn" [class.active]="uploadMode === 'file'" (click)="setUploadMode('file')">
+          <i class="pi pi-upload"></i> File
+        </button>
+      </div>
+      
+      <div class="form-group" *ngIf="uploadMode === 'url'">
+        <label>Resource URL *</label>
+        <input type="url" formControlName="resourceUrl" class="form-control">
+      </div>
+      
+      <div class="form-group" *ngIf="uploadMode === 'file'">
+        <label>Select File *</label>
+        <input type="file" (change)="onFileSelected($event)" class="form-control">
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeAddResourceModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" [disabled]="addResourceForm.invalid">Add Resource</button>
+      </div>
+    </form>
+  </div>
+</div>

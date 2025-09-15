@@ -1,0 +1,125 @@
+.resources-overview {
+  padding: 2rem 0;
+}
+
+.resource-type-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.resource-type-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--border-radius-lg);
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.resource-type-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.resource-type-card:first-child {
+  border-left: 4px solid var(--primary-blue);
+}
+
+.resource-type-card:last-child {
+  border-left: 4px solid var(--warning);
+}
+
+.card-header {
+  margin-bottom: 1.5rem;
+}
+
+.card-header h3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  color: var(--gray-800);
+}
+
+.card-header h3 i {
+  font-size: 1.75rem;
+}
+
+.resource-type-card:first-child .card-header h3 i {
+  color: var(--primary-blue);
+}
+
+.resource-type-card:last-child .card-header h3 i {
+  color: var(--warning);
+}
+
+.card-header p {
+  color: var(--gray-600);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.card-stats {
+  margin-bottom: 2rem;
+}
+
+.resource-count {
+  display: inline-block;
+  background: var(--gray-50);
+  color: var(--gray-700);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-size: 1.125rem;
+  font-weight: 600;
+  border: 1px solid var(--gray-200);
+}
+
+.card-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.card-actions .btn {
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.card-actions .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .resource-type-cards {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .resource-type-card {
+    padding: 1.5rem;
+  }
+  
+  .card-header h3 {
+    font-size: 1.25rem;
+  }
+  
+  .card-actions .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    min-width: 120px;
+  }
+}
