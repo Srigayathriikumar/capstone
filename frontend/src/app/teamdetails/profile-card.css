@@ -1,0 +1,51 @@
+/* Enhanced Profile Card Styles */
+.profile-card {
+  flex: 0 0 35%;
+  max-width: 35%;
+}
+
+.heatmap-card {
+  flex: 0 0 60%;
+  max-width: 60%;
+}
+
+.profile-card .user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+}
+
+.profile-card .user-profile-image {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.profile-card .user-details {
+  flex: 1;
+  text-align: left;
+}
+
+.profile-card .user-details h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.profile-card .user-details p {
+  margin: 0 0 8px 0;
+  color: #666;
+}
+
+.profile-card .user-role {
+  margin: 0;
+  padding: 6px 12px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+

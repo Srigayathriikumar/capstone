@@ -1,0 +1,55 @@
+        // Create Resources - 4 Common and 4 Controlled per project
+        
+        // Meeting Room Booking Resources
+        Resource meetingDB = createResource("Meeting Room Database", "Database for room bookings and schedules", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://meeting-db:5432/rooms", false, meetingRoomBooking, "priya.manager");
+        Resource meetingAPI = createResource("Meeting Room API", "REST API for room booking operations", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/meetings", false, meetingRoomBooking, "priya.manager");
+        Resource meetingDocs = createResource("Meeting Room Documentation", "System documentation and user guides", Resource.ResourceType.PDF, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/meetings.pdf", false, meetingRoomBooking, "dev1");
+        Resource meetingRepo = createResource("Meeting Room Repository", "Source code repository", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/meeting-rooms", false, meetingRoomBooking, "dev2");
+        
+        // Employee360 Resources
+        Resource employeeDB = createResource("Employee Database", "Employee information and records database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://emp-db:5432/employees", false, employee360, "james.manager");
+        Resource employeeAPI = createResource("Employee API", "Employee management REST API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/employees", false, employee360, "james.manager");
+        Resource employeeDocs = createResource("Employee System Docs", "Employee system documentation", Resource.ResourceType.DOC, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/employee360.doc", false, employee360, "dev3");
+        Resource employeeRepo = createResource("Employee Repository", "Employee system source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/employee360", false, employee360, "dev4");
+        
+        // Leave Management Resources
+        Resource leaveDB = createResource("Leave Management Database", "Leave requests and approval database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://leave-db:5432/leaves", false, leaveManagement, "sarah.manager");
+        Resource leaveAPI = createResource("Leave Management API", "Leave processing REST API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/leaves", false, leaveManagement, "sarah.manager");
+        Resource leaveDocs = createResource("Leave System Documentation", "Leave management user guide", Resource.ResourceType.PDF, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/leave-mgmt.pdf", false, leaveManagement, "dev5");
+        Resource leaveRepo = createResource("Leave Management Repository", "Leave system source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/leave-management", false, leaveManagement, "dev6");
+        
+        // AssetDesk Resources
+        Resource assetDB = createResource("Asset Management Database", "IT assets and inventory database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://asset-db:5432/assets", false, assetDesk, "mike.manager");
+        Resource assetAPI = createResource("Asset Management API", "Asset tracking REST API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/assets", false, assetDesk, "mike.manager");
+        Resource assetDocs = createResource("Asset Management Docs", "Asset system documentation", Resource.ResourceType.DOC, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/assetdesk.doc", false, assetDesk, "dev7");
+        Resource assetRepo = createResource("AssetDesk Repository", "Asset management source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/assetdesk", false, assetDesk, "dev8");
+        
+        // Visitor Portal Resources
+        Resource visitorDB = createResource("Visitor Management Database", "Visitor registration and tracking database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://visitor-db:5432/visitors", false, visitorPortal, "anna.manager");
+        Resource visitorAPI = createResource("Visitor Portal API", "Visitor management REST API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/visitors", false, visitorPortal, "anna.manager");
+        Resource visitorDocs = createResource("Visitor Portal Documentation", "Visitor system user guide", Resource.ResourceType.PDF, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/visitor-portal.pdf", false, visitorPortal, "dev9");
+        Resource visitorRepo = createResource("Visitor Portal Repository", "Visitor portal source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/visitor-portal", false, visitorPortal, "dev10");
+        
+        // Event Management Resources
+        Resource eventDB = createResource("Event Management Database", "Event planning and tracking database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://event-db:5432/events", false, eventManagement, "priya.manager");
+        Resource eventAPI = createResource("Event Management API", "Event management REST API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/events", false, eventManagement, "priya.manager");
+        Resource eventDocs = createResource("Event Management Docs", "Event system documentation", Resource.ResourceType.DOC, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/events.doc", false, eventManagement, "dev1");
+        Resource eventRepo = createResource("Event Management Repository", "Event management source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/event-management", false, eventManagement, "dev3");
+        
+        // TaskHub Resources
+        Resource taskDB = createResource("TaskHub Database", "Personal task and productivity database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://task-db:5432/tasks", false, taskHub, "james.manager");
+        Resource taskAPI = createResource("TaskHub API", "Task management REST API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/tasks", false, taskHub, "james.manager");
+        Resource taskDocs = createResource("TaskHub Documentation", "TaskHub user documentation", Resource.ResourceType.PDF, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/taskhub.pdf", false, taskHub, "dev2");
+        Resource taskRepo = createResource("TaskHub Repository", "TaskHub source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/taskhub", false, taskHub, "dev4");
+        
+        // Budget Tracker Resources
+        Resource budgetDB = createResource("Budget Tracker Database", "Financial budget and expense database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://budget-db:5432/budget", false, budgetTracker, "sarah.manager");
+        Resource budgetAPI = createResource("Budget Tracker API", "Budget management REST API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/budget", false, budgetTracker, "sarah.manager");
+        Resource budgetDocs = createResource("Budget Tracker Docs", "Budget system documentation", Resource.ResourceType.DOC, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/budget-tracker.doc", false, budgetTracker, "dev5");
+        Resource budgetRepo = createResource("Budget Tracker Repository", "Budget tracker source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/budget-tracker", false, budgetTracker, "dev7");
+        
+        // Global Common Resources
+        Resource testDB = createResource("Test Database", "Global testing environment database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.COMMON, "jdbc:postgresql://test-db:5432/test", false, null, "rajesh.admin");
+        Resource jenkins = createResource("Jenkins CI/CD", "Continuous integration and deployment server", Resource.ResourceType.URL, Resource.ResourceCategory.CLOUD_SERVICES, Resource.ResourceAccessType.COMMON, "https://jenkins.company.com", true, null, "rajesh.admin");
+        Resource sonarqube = createResource("SonarQube", "Code quality and security analysis", Resource.ResourceType.URL, Resource.ResourceCategory.CLOUD_SERVICES, Resource.ResourceAccessType.COMMON, "https://sonar.company.com", true, null, "rajesh.admin");
+        Resource apiGateway = createResource("API Gateway", "Main API gateway for all systems", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/gateway", true, null, "rajesh.admin");

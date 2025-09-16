@@ -356,6 +356,11 @@ export class CommonResourcesComponent implements OnInit {
   // Role and access methods
   isManagerOrAdmin(): boolean {
     const role = this.teamService.getCurrentUserRole();
+    return role === 'PROJECT_MANAGER' || role === 'ADMIN' || role === 'MANAGER' || role === 'TEAMLEAD';
+  }
+
+  isManagerOrAdminOnly(): boolean {
+    const role = this.teamService.getCurrentUserRole();
     return role === 'PROJECT_MANAGER' || role === 'ADMIN' || role === 'MANAGER';
   }
 
@@ -412,7 +417,7 @@ export class CommonResourcesComponent implements OnInit {
   }
   
   setActiveTab(tab: string): void {
-    this.router.navigate(['/team', this.teamId]);
+    this.router.navigate(['/team', this.teamId], { queryParams: { tab: tab } });
   }
   
   team: any = null;

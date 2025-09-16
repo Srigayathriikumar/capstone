@@ -1,0 +1,93 @@
+/* Equal Width Fix for Profile and Heatmap Cards */
+
+/* Override any existing grid layouts for user overview */
+.user-overview .overview-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  grid-template-rows: auto auto auto !important;
+  gap: 20px !important;
+}
+
+/* Force equal width for profile and heatmap cards */
+.user-overview .profile-card,
+.user-overview .heatmap-card {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Specific grid positioning */
+.user-overview .profile-card {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 !important;
+}
+
+.user-overview .heatmap-card {
+  grid-column: 2 / 3 !important;
+  grid-row: 2 !important;
+}
+
+/* Ensure consistent padding and margins */
+.user-overview .profile-card,
+.user-overview .heatmap-card {
+  padding: 24px !important;
+  margin: 0 !important;
+}
+
+/* Override any flex properties that might interfere */
+.user-overview .profile-card .user-info,
+.user-overview .heatmap-card .activity-heatmap {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Force equal width for both cards in the second row */
+.user-overview .overview-grid .profile-card,
+.user-overview .overview-grid .heatmap-card {
+  grid-column-start: auto !important;
+  grid-column-end: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: none !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure the second row has exactly 2 equal columns */
+.user-overview .overview-grid {
+  grid-template-columns: 1fr 1fr 1fr !important;
+}
+
+/* Make sure profile card takes first column of second row */
+.user-overview .profile-card {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 !important;
+}
+
+/* Make sure heatmap card takes second column of second row */
+.user-overview .heatmap-card {
+  grid-column: 2 / 3 !important;
+  grid-row: 2 !important;
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .user-overview .overview-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .user-overview .profile-card,
+  .user-overview .heatmap-card {
+    grid-column: 1 !important;
+  }
+  
+  .user-overview .profile-card {
+    grid-row: 4 !important;
+  }
+  
+  .user-overview .heatmap-card {
+    grid-row: 5 !important;
+  }
+}

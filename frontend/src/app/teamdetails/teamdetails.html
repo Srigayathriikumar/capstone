@@ -17,11 +17,6 @@
       </div>
     </div>
     <div class="navbar-right">
-
-      <button class="nav-btn" title="User Details">
-        <i class="pi pi-user"></i>
-        <span>{{ currentUsername }}</span>
-      </button>
       <div class="notification-container">
         <button class="nav-btn" (click)="toggleNotifications()" title="Notifications">
           <i class="pi pi-bell"></i>
@@ -49,9 +44,38 @@
           </div>
         </div>
       </div>
-      <button class="nav-btn logout" (click)="logout()" title="Logout">
-        <i class="pi pi-sign-out"></i>
-      </button>
+      
+      <div class="user-profile-container">
+        <button class="nav-btn user-profile-btn" (click)="toggleUserDropdown()" title="User Profile">
+          <i class="pi pi-user"></i>
+          <span>{{ currentUsername }}</span>
+          <i class="pi pi-angle-down dropdown-arrow"></i>
+        </button>
+        
+        <div class="user-dropdown" *ngIf="showUserDropdown">
+          <div class="user-dropdown-header">
+            <div class="user-avatar-dropdown">
+              {{ currentUsername.charAt(0).toUpperCase() }}
+            </div>
+            <div class="user-info-dropdown">
+              <h4>{{ currentUsername }}</h4>
+              <p>{{ getCurrentUserEmail() }}</p>
+              <span class="user-role-badge">{{ getCurrentUserRole() }}</span>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-menu-items">
+            <button class="dropdown-item" (click)="openProfileSettings()">
+              <i class="pi pi-cog"></i>
+              <span>Profile Settings</span>
+            </button>
+            <button class="dropdown-item logout-item" (click)="logout()">
+              <i class="pi pi-sign-out"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </nav>
   
@@ -60,11 +84,10 @@
     <!-- Sidebar Navigation -->
     <aside class="sidebar" [class.hidden]="sidebarHidden" [class.collapsed]="sidebarHidden">
     <div class="sidebar-header">
+      <div class="team-icon" [class]="'status-' + (team?.status?.toLowerCase() || 'active')">
+        {{ (team?.name || 'T').charAt(0).toUpperCase() }}
+      </div>
       <div class="team-info">
-        <div class="team-icon" [class]="getStatusClass(team?.status || '')">
-          {{ (team?.name || 'T').charAt(0).toUpperCase() }}
-        </div>
-        <div class="team-status-mini" [class]="getStatusClass(team?.status || '')"></div>
         <div class="team-header-row">
           <h2>{{ team?.name }}</h2>
         </div>
@@ -97,22 +120,28 @@
         <i class="pi pi-users"></i>
         <span>Members</span>
       </button>
-      <div class="nav-group">
-        <div class="nav-group-header">
-          <i class="pi pi-folder"></i>
-          <span>Resources</span>
-        </div>
-        <div class="nav-subitems">
-          <button class="nav-subitem" (click)="navigateToCommonResources()" data-tooltip="Common Resources">
-            <i class="pi pi-users"></i>
-            <span>Common Resources</span>
-          </button>
-          <button class="nav-subitem" (click)="navigateToManagerResources()" data-tooltip="Controlled Resources">
-            <i class="pi pi-lock"></i>
-            <span>Controlled Resources</span>
-          </button>
-        </div>
+      <div class="nav-section-header">
+        <span>RESOURCES</span>
       </div>
+      <button 
+        class="nav-item"
+        [class.active]="activeTab === 'common-resources'"
+        (click)="navigateToCommonResources()"
+        data-tooltip="Common Resources"
+      >
+        <i class="pi pi-folder-open"></i>
+        <span>Common Resources</span>
+      </button>
+      <button 
+        class="nav-item"
+        [class.active]="activeTab === 'manager-resources'"
+        (click)="navigateToManagerResources()"
+        data-tooltip="Controlled Resources"
+      >
+        <i class="pi pi-lock"></i>
+        <span>Controlled Resources</span>
+      </button>
+      <div class="nav-separator"></div>
       <button 
         class="nav-item"
         [class.active]="activeTab === 'requests'"
@@ -132,7 +161,7 @@
         <span>My Uploads</span>
       </button>
       <button 
-        *ngIf="isManagerOrAdmin()"
+        *ngIf="isManagerOrAdminOnly()"
         class="nav-item"
         [class.active]="activeTab === 'create-project'"
         (click)="setActiveTab('create-project')"
@@ -183,33 +212,37 @@
             <div class="status-options">
               <div class="status-chip" 
                    [class.active]="team?.status === 'ACTIVE'"
-                   (click)="updateTeamStatus(team?.id, {target: {value: 'ACTIVE'}})">
+                   [class.disabled]="!isManagerOrAdminOnly()"
+                   (click)="isManagerOrAdminOnly() && updateTeamStatus(team?.id, {target: {value: 'ACTIVE'}})">
                 <span class="status-text">ACTIVE</span>
                 <div class="status-indicator"></div>
               </div>
               <div class="status-chip" 
                    [class.active]="team?.status === 'INACTIVE'"
-                   (click)="updateTeamStatus(team?.id, {target: {value: 'INACTIVE'}})">
+                   [class.disabled]="!isManagerOrAdminOnly()"
+                   (click)="isManagerOrAdminOnly() && updateTeamStatus(team?.id, {target: {value: 'INACTIVE'}})">
                 <span class="status-text">INACTIVE</span>
                 <div class="status-indicator"></div>
               </div>
               <div class="status-chip" 
                    [class.active]="team?.status === 'COMPLETED'"
-                   (click)="updateTeamStatus(team?.id, {target: {value: 'COMPLETED'}})">
+                   [class.disabled]="!isManagerOrAdminOnly()"
+                   (click)="isManagerOrAdminOnly() && updateTeamStatus(team?.id, {target: {value: 'COMPLETED'}})">
                 <span class="status-text">COMPLETED</span>
                 <div class="status-indicator"></div>
               </div>
               <div class="status-chip" 
                    [class.active]="team?.status === 'ARCHIVED'"
-                   (click)="updateTeamStatus(team?.id, {target: {value: 'ARCHIVED'}})">
+                   [class.disabled]="!isManagerOrAdminOnly()"
+                   (click)="isManagerOrAdminOnly() && updateTeamStatus(team?.id, {target: {value: 'ARCHIVED'}})">
                 <span class="status-text">ARCHIVED</span>
                 <div class="status-indicator"></div>
               </div>
             </div>
-            <div class="status-info">
-              <p><i class="pi pi-info-circle"></i> Last updated: {{ team?.updatedAt | date:'short' || 'Never' }}</p>
-              <p><i class="pi pi-user"></i> Updated by: {{ currentUsername }}</p>
-            </div>
+          </div>
+          <div class="status-info">
+            <p><i class="pi pi-info-circle"></i> Last updated: {{ team?.updatedAt | date:'short' || 'Never' }}</p>
+            <p><i class="pi pi-user"></i> Updated by: {{ currentUsername }}</p>
           </div>
         </div>
         
@@ -302,28 +335,28 @@
           </div>
         </div>
         
-        <!-- User View: First Row - Access Summary Cards -->
+        <!-- User View: First Row - Professional Summary Cards -->
         <div class="overview-card access-summary-card" *ngIf="!isManagerOrAdmin()">
           <div class="access-item">
-            <i class="pi pi-check-circle"></i>
+            <i class="pi pi-shield"></i>
             <span class="access-count">{{ getUserApprovedCount() }}</span>
-            <span class="access-label">Approved Access</span>
+            <span class="access-label">Active Permissions</span>
           </div>
         </div>
         
         <div class="overview-card access-summary-card" *ngIf="!isManagerOrAdmin()">
           <div class="access-item">
-            <i class="pi pi-clock"></i>
+            <i class="pi pi-hourglass"></i>
             <span class="access-count">{{ getUserPendingCount() }}</span>
-            <span class="access-label">Pending Requests</span>
+            <span class="access-label">Pending Approvals</span>
           </div>
         </div>
         
         <div class="overview-card access-summary-card" *ngIf="!isManagerOrAdmin()">
           <div class="access-item">
-            <i class="pi pi-upload"></i>
+            <i class="pi pi-briefcase"></i>
             <span class="access-count">{{ userUploads.length }}</span>
-            <span class="access-label">My Contributions</span>
+            <span class="access-label">Resource Assets</span>
           </div>
         </div>
         
@@ -346,9 +379,9 @@
           </div>
         </div>
         
-        <!-- User View: Second Row - My Profile and Heatmap -->
+        <!-- User View: Second Row - Professional Profile and Metrics -->
         <div class="overview-card profile-card" *ngIf="!isManagerOrAdmin()">
-          <h3><i class="pi pi-user"></i> My Profile</h3>
+          <h3><i class="pi pi-id-card"></i> Professional Profile</h3>
           <div class="user-info">
             <div class="user-profile-image">
               <img [src]="getUserAvatar()" 
@@ -368,7 +401,7 @@
         </div>
         
         <div class="overview-card heatmap-card" *ngIf="!isManagerOrAdmin()">
-          <h3>Team Activity Heatmap</h3>
+          <h3><i class="pi pi-chart-bar"></i> Productivity Metrics</h3>
           <div class="activity-heatmap">
             <div class="heatmap-grid">
               <div class="heatmap-cell" 
@@ -378,31 +411,53 @@
               </div>
             </div>
             <div class="heatmap-legend">
-              <span class="legend-text">Less</span>
+              <span class="legend-text">Low</span>
               <div class="legend-scale">
                 <div class="scale-item activity-0"></div>
                 <div class="scale-item activity-1"></div>
                 <div class="scale-item activity-2"></div>
                 <div class="scale-item activity-3"></div>
               </div>
-              <span class="legend-text">More</span>
+              <span class="legend-text">High</span>
             </div>
           </div>
         </div>
         
-        <!-- User View: Third Row - Full Width Recent Activity -->
+        <div class="overview-card quick-actions-card" *ngIf="!isManagerOrAdmin()">
+          <h3><i class="pi pi-bolt"></i> Quick Actions</h3>
+          <div class="quick-actions-grid">
+            <button class="quick-action-btn" (click)="setActiveTab('common-resources')">
+              <i class="pi pi-folder-open"></i>
+              <span>Browse Resources</span>
+            </button>
+            <button class="quick-action-btn" (click)="setActiveTab('requests')">
+              <i class="pi pi-key"></i>
+              <span>My Requests</span>
+            </button>
+            <button class="quick-action-btn" (click)="setActiveTab('uploads')">
+              <i class="pi pi-upload"></i>
+              <span>My Uploads</span>
+            </button>
+            <button class="quick-action-btn" (click)="setActiveTab('members')">
+              <i class="pi pi-users"></i>
+              <span>Team Members</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- User View: Third Row - Full Width Professional Activity -->
         <div class="overview-card recent-activity-full" *ngIf="!isManagerOrAdmin()">
-          <h3>Recent Activity</h3>
+          <h3><i class="pi pi-history"></i> Access Request History</h3>
           <div class="activity-list">
             <div class="activity-item" *ngFor="let request of userAccessRequests.slice(0, 10)">
               <div class="activity-info">
-                You requested access to <strong>{{ request.resourceName }}</strong>
+                <i class="pi pi-key"></i> Access requested for <strong>{{ request.resourceName }}</strong>
                 <span class="status-indicator" [class]="'status-' + request.status.toLowerCase()">{{ request.status }}</span>
               </div>
               <span class="activity-time">{{ request.requestedAt | date:'short' }}</span>
             </div>
             <div class="no-activity" *ngIf="userAccessRequests.length === 0">
-              No recent activity
+              <i class="pi pi-info-circle"></i> No access requests submitted yet
             </div>
           </div>
         </div>
@@ -411,6 +466,20 @@
 
     <!-- Members Tab -->
     <div class="tab-panel" *ngIf="activeTab === 'members'">
+      <div class="members-section">
+        <div class="members-header">
+          <h3>Team Members</h3>
+          <div class="header-buttons" *ngIf="isManagerOrAdmin()">
+            <button class="btn btn-secondary" (click)="openAddUserToProjectModal()">
+              <i class="pi pi-user-plus"></i> Add User to Project
+            </button>
+            <button class="btn btn-primary" *ngIf="isManagerOrAdminOnly()" (click)="openCreateUserModal()">
+              <i class="pi pi-plus"></i> Create New User
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <div class="members-section" *ngIf="manager">
         <h3>Project Manager</h3>
         <div class="member-card manager-card">
@@ -426,7 +495,6 @@
       </div>
       
       <div class="members-section">
-        <h3>Team Members</h3>
         <div class="members-grid">
           <div class="member-card" *ngFor="let member of teamMembers">
             <div class="member-avatar">
@@ -669,7 +737,7 @@
               <button class="btn btn-sm btn-primary" *ngIf="canAccessResource(resource)" (click)="viewFile(resource)">
                 <i class="pi pi-eye"></i> View
               </button>
-              <button class="btn btn-sm btn-warning" *ngIf="!hasApprovedAccess(resource) && !isManagerOrAdmin()" (click)="openRequestAccessModal(resource)">
+              <button class="btn btn-sm btn-warning" *ngIf="!hasApprovedAccess(resource) && isTeamMember()" (click)="openRequestAccessModal(resource)">
                 <i class="pi pi-key"></i> Request Access
               </button>
             </div>
@@ -685,6 +753,111 @@
     <!-- Create Project Tab -->
     <div class="tab-panel" *ngIf="activeTab === 'create-project'">
       <app-create-project></app-create-project>
+    </div>
+
+    <!-- Profile Settings Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'profile-settings'">
+      <div class="profile-settings-container">
+        <div class="profile-settings-header">
+          <h3><i class="pi pi-user-cog"></i> Profile Settings</h3>
+          <p>Manage your personal information and account preferences</p>
+        </div>
+        
+        <div class="profile-settings-content">
+          <div class="profile-avatar-section">
+            <div class="current-avatar">
+              <img [src]="getUserAvatar()" alt="Profile Avatar" class="avatar-preview" (error)="onImageError($event)">
+              <div class="avatar-fallback">{{ currentUsername.charAt(0).toUpperCase() }}</div>
+            </div>
+            <div class="avatar-info">
+              <h4>Profile Picture</h4>
+              <p>Your avatar is automatically generated based on your username</p>
+            </div>
+          </div>
+          
+          <form [formGroup]="profileSettingsForm" (ngSubmit)="onUpdateProfile()" class="profile-form">
+            <div class="form-section">
+              <h4><i class="pi pi-user"></i> Personal Information</h4>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="username">Username</label>
+                  <input type="text" id="username" formControlName="username" class="form-control" readonly>
+                  <small class="form-help">Username cannot be changed</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="email">Email Address *</label>
+                  <input type="email" id="email" formControlName="email" class="form-control" placeholder="Enter your email">
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="fullName">Full Name</label>
+                  <input type="text" id="fullName" formControlName="fullName" class="form-control" placeholder="Enter your full name">
+                </div>
+                
+                <div class="form-group">
+                  <label for="role">Role</label>
+                  <input type="text" id="role" formControlName="role" class="form-control" readonly>
+                  <small class="form-help">Role is managed by administrators</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-section">
+              <h4><i class="pi pi-cog"></i> Account Preferences</h4>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="timezone">Timezone</label>
+                  <select id="timezone" formControlName="timezone" class="form-control">
+                    <option value="UTC">UTC (Coordinated Universal Time)</option>
+                    <option value="America/New_York">Eastern Time (ET)</option>
+                    <option value="America/Chicago">Central Time (CT)</option>
+                    <option value="America/Denver">Mountain Time (MT)</option>
+                    <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                    <option value="Europe/London">London (GMT)</option>
+                    <option value="Europe/Paris">Paris (CET)</option>
+                    <option value="Asia/Tokyo">Tokyo (JST)</option>
+                    <option value="Asia/Kolkata">India (IST)</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="language">Language</label>
+                  <select id="language" formControlName="language" class="form-control">
+                    <option value="en">English</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                    <option value="ja">Japanese</option>
+                    <option value="zh">Chinese</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="emailNotifications">
+                  <span class="checkmark"></span>
+                  Receive email notifications for access requests and updates
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="resetProfileForm()">
+                <i class="pi pi-refresh"></i> Reset Changes
+              </button>
+              <button type="submit" class="btn btn-primary" [disabled]="profileSettingsForm.invalid || !profileSettingsForm.dirty">
+                <i class="pi pi-check"></i> Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
 
     <!-- Audit Log Tab -->
@@ -1446,6 +1619,99 @@
     </div>
   </div>
 
+  <!-- Add User to Project Modal -->
+  <div class="modal-overlay" *ngIf="showAddUserToProjectModal" (click)="closeAddUserToProjectModal()">
+    <div class="modal-content scrollable-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="pi pi-user-plus"></i> Add User to Project</h3>
+        <button class="close-btn" (click)="closeAddUserToProjectModal()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Search Users</label>
+          <input type="text" 
+                 [(ngModel)]="searchTerm" 
+                 (input)="onSearchUsers()"
+                 placeholder="Search by name, username, or email..." 
+                 class="form-control">
+        </div>
+        
+        <div class="users-list" *ngIf="filteredUsers.length > 0">
+          <div class="user-item" 
+               *ngFor="let user of filteredUsers" 
+               (click)="selectUser(user)"
+               [class.selected]="selectedUser?.id === user.id">
+            <div class="user-avatar">{{ user.fullName.charAt(0) }}</div>
+            <div class="user-info">
+              <div class="user-name">{{ user.fullName }}</div>
+              <div class="user-details">{{ user.username }} • {{ user.role }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="no-results" *ngIf="searchTerm && filteredUsers.length === 0">
+          No users found matching "{{ searchTerm }}"
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeAddUserToProjectModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" [disabled]="!selectedUser" (click)="addUserToProject()">
+            <i class="pi pi-check"></i> Add User
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create User Modal -->
+  <div class="modal-overlay" *ngIf="showCreateUserModal" (click)="closeCreateUserModal()">
+    <div class="modal-content scrollable-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="pi pi-user-plus"></i> Create New User</h3>
+        <button class="close-btn" (click)="closeCreateUserModal()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <form [formGroup]="createUserForm" (ngSubmit)="onCreateUser()">
+          <div class="form-group">
+            <label for="username">Username *</label>
+            <input type="text" id="username" formControlName="username" class="form-control" placeholder="Enter username (e.g., john.dev)">
+            <div class="form-help">Username should end with role suffix (.dev, .test, .teamlead, .manager)</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" formControlName="email" class="form-control" placeholder="Enter email address">
+          </div>
+          
+          <div class="form-group">
+            <label for="fullName">Full Name *</label>
+            <input type="text" id="fullName" formControlName="fullName" class="form-control" placeholder="Enter full name">
+          </div>
+          
+          <div class="form-group">
+            <label for="role">Role *</label>
+            <select id="role" formControlName="role" class="form-control">
+              <option value="">Select Role</option>
+              <option value="TEAM_MEMBER">Team Member (.dev/.test)</option>
+              <option value="TEAMLEAD">Team Lead (.teamlead)</option>
+              <option value="PROJECT_MANAGER">Project Manager (.manager)</option>
+            </select>
+            <div class="form-help">Select the appropriate role for this user</div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" (click)="closeCreateUserModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="createUserForm.invalid">
+              <i class="pi pi-check"></i> Create User
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Team Chat -->
@@ -1508,3 +1774,5 @@
   <div class="loading-spinner"></div>
   <p>Loading team details...</p>
 </div>
+
+<app-toast></app-toast>

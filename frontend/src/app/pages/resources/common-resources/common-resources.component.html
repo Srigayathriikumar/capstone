@@ -58,22 +58,18 @@
           <i class="pi pi-users"></i>
           <span>Members</span>
         </button>
-        <div class="nav-group">
-          <div class="nav-group-header">
-            <i class="pi pi-folder"></i>
-            <span>Resources</span>
-          </div>
-          <div class="nav-subitems">
-            <button class="nav-subitem active">
-              <i class="pi pi-users"></i>
-              <span>Common Resources</span>
-            </button>
-            <button class="nav-subitem" (click)="navigateToManagerResources()">
-              <i class="pi pi-lock"></i>
-              <span>Controlled Resources</span>
-            </button>
-          </div>
+        <div class="nav-section-header">
+          <span>RESOURCES</span>
         </div>
+        <button class="nav-item active">
+          <i class="pi pi-folder-open"></i>
+          <span>Common Resources</span>
+        </button>
+        <button class="nav-item" (click)="navigateToManagerResources()">
+          <i class="pi pi-lock"></i>
+          <span>Controlled Resources</span>
+        </button>
+        <div class="nav-separator"></div>
         <button class="nav-item" (click)="setActiveTab('requests')">
           <i class="pi pi-key"></i>
           <span>Access Requests</span>
@@ -83,7 +79,7 @@
           <span>My Uploads</span>
         </button>
         <button 
-          *ngIf="isManagerOrAdmin()"
+          *ngIf="isManagerOrAdminOnly()"
           class="nav-item"
           (click)="setActiveTab('create-project')"
         >

@@ -114,18 +114,43 @@ export class TeamService {
 
   getCurrentUserId(): number {
     const user = (this.authService as any).currentUserSubject?.value;
-    // Map username to correct database user ID
+    // Map username to correct database user ID based on DataInitializer order
     const userIdMap: { [key: string]: number } = {
       'rajesh.admin': 1,
       'priya.manager': 2, 
       'james.manager': 3,
-      'anita.teamlead': 4,
-      'carlos.teamlead': 5,
-      'arjun.dev': 6,
-      'emily.dev': 7,
-      'vikram.dev': 8,
-      'sophia.test': 9,
-      'ravi.test': 10
+      'sarah.manager': 4,
+      'mike.manager': 5,
+      'anna.manager': 6,
+      'adhnanjeff.teamlead': 7,
+      'swetha.teamlead': 8,
+      'hari.teamlead': 9,
+      'sounder.teamlead': 10,
+      'tharanika.teamlead': 11,
+      'pradeep.teamlead': 12,
+      'adrin.teamlead': 13,
+      'lokesh.teamlead': 14,
+      'tom.teamlead': 15,
+      'jane.teamlead': 16,
+      'arjun.dev': 17,
+      'emily.dev': 18,
+      'vikram.dev': 19,
+      'michael.dev': 20,
+      'jennifer.dev': 21,
+      'robert.dev': 22,
+      'peter.dev': 23,
+      'amy.dev': 24,
+      'chris.dev': 25,
+      'lisa.dev': 26,
+      'sophia.test': 27,
+      'ravi.test': 28,
+      'amanda.test': 29,
+      'kevin.test': 30,
+      'nancy.test': 31,
+      'mark.test': 32,
+      'helen.test': 33,
+      'paul.test': 34,
+      'jane.tester': 35
     };
     return userIdMap[user?.username] || 1;
   }
@@ -350,7 +375,7 @@ export class TeamService {
   }
   
   getAllEmployees(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/users/employees`, { headers: this.getHeaders() });
+    return this.http.get<any[]>(`${this.apiUrl}/users`, { headers: this.getHeaders() });
   }
   
   searchUsers(query: string): Observable<any[]> {
@@ -359,5 +384,13 @@ export class TeamService {
   
   getProjectsByManager(managerId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/projects/manager/${managerId}`, { headers: this.getHeaders() });
+  }
+  
+  createUser(userData: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/users`, userData, { headers: this.getHeaders() });
+  }
+  
+  addUserToProject(userId: number, projectId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/projects/${projectId}/users/${userId}`, {}, { headers: this.getHeaders() });
   }
 }

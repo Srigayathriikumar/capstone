@@ -58,6 +58,52 @@ public class SecurityConfig {
                 .password(passwordEncoder.encode("james123"))
                 .roles("MANAGER")
                 .build(),
+            User.builder()
+                .username("sarah.manager")
+                .password(passwordEncoder.encode("sarah123"))
+                .roles("MANAGER")
+                .build(),
+            // Database Users - Team Leads
+            User.builder()
+                .username("adhnanjeff.teamlead")
+                .password(passwordEncoder.encode("adhnanjeff123"))
+                .roles("TEAMLEAD")
+                .build(),
+            User.builder()
+                .username("swetha.teamlead")
+                .password(passwordEncoder.encode("swetha123"))
+                .roles("TEAMLEAD")
+                .build(),
+            User.builder()
+                .username("hari.teamlead")
+                .password(passwordEncoder.encode("hari123"))
+                .roles("TEAMLEAD")
+                .build(),
+            User.builder()
+                .username("sounder.teamlead")
+                .password(passwordEncoder.encode("sounder123"))
+                .roles("TEAMLEAD")
+                .build(),
+            User.builder()
+                .username("tharanika.teamlead")
+                .password(passwordEncoder.encode("tharanika123"))
+                .roles("TEAMLEAD")
+                .build(),
+            User.builder()
+                .username("pradeep.teamlead")
+                .password(passwordEncoder.encode("pradeep123"))
+                .roles("TEAMLEAD")
+                .build(),
+            User.builder()
+                .username("adrin.teamlead")
+                .password(passwordEncoder.encode("adrin123"))
+                .roles("TEAMLEAD")
+                .build(),
+            User.builder()
+                .username("lokesh.teamlead")
+                .password(passwordEncoder.encode("lokesh123"))
+                .roles("TEAMLEAD")
+                .build(),
             // Database Users - Team Members
             User.builder()
                 .username("arjun.dev")
@@ -75,6 +121,21 @@ public class SecurityConfig {
                 .roles("USER")
                 .build(),
             User.builder()
+                .username("michael.dev")
+                .password(passwordEncoder.encode("michael123"))
+                .roles("USER")
+                .build(),
+            User.builder()
+                .username("jennifer.dev")
+                .password(passwordEncoder.encode("jennifer123"))
+                .roles("USER")
+                .build(),
+            User.builder()
+                .username("robert.dev")
+                .password(passwordEncoder.encode("robert123"))
+                .roles("USER")
+                .build(),
+            User.builder()
                 .username("sophia.test")
                 .password(passwordEncoder.encode("sophia123"))
                 .roles("USER")
@@ -85,20 +146,19 @@ public class SecurityConfig {
                 .roles("USER")
                 .build(),
             User.builder()
+                .username("amanda.test")
+                .password(passwordEncoder.encode("amanda123"))
+                .roles("USER")
+                .build(),
+            User.builder()
+                .username("kevin.test")
+                .password(passwordEncoder.encode("kevin123"))
+                .roles("USER")
+                .build(),
+            User.builder()
                 .username("rajesh.admin")
                 .password(passwordEncoder.encode("rajesh123"))
                 .roles("ADMIN")
-                .build(),
-            // Database Users - Team Leads
-            User.builder()
-                .username("anita.teamlead")
-                .password(passwordEncoder.encode("anita123"))
-                .roles("TEAMLEAD")
-                .build(),
-            User.builder()
-                .username("carlos.teamlead")
-                .password(passwordEncoder.encode("carlos123"))
-                .roles("TEAMLEAD")
                 .build()
         );
     }
@@ -134,13 +194,15 @@ public class SecurityConfig {
                 // Authentication APIs
                 .requestMatchers("/api/auth/**").permitAll()
 
-                // User Management - Admin and Super Admin only
-                .requestMatchers("/api/users/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                // User Management - Admin, Super Admin, and Manager can create users
+                .requestMatchers("/api/users").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
+                .requestMatchers("/api/users/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
 
                 // Project Management - Admin, Manager, TeamLead access for management operations
                 .requestMatchers("/api/projects/*/activate", "/api/projects/*/deactivate", "/api/projects/*/complete", "/api/projects/*/archive").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
                 .requestMatchers("/api/projects/my-projects").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "TEAMLEAD", "USER")
                 .requestMatchers("/api/projects/*/users", "/api/projects/*/resources", "/api/projects/*").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "TEAMLEAD", "USER")
+                .requestMatchers("/api/projects").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER")
                 .requestMatchers("/api/projects/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "TEAMLEAD")
 
                 // Resource Management
@@ -163,9 +225,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/permissions/resource/*", "/api/permissions/user/*").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "TEAMLEAD", "USER")
                 .requestMatchers("/api/permissions/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "TEAMLEAD")
 
-                // Audit Logs - Super Admin and Admin only
+                // Audit Logs - Super Admin, Admin, Manager and TeamLead access
                 .requestMatchers("/api/audit-logs/cleanup", "/api/audit-logs/delete-old").hasRole("SUPER_ADMIN")
-                .requestMatchers("/api/audit-logs/**").hasAnyRole("SUPER_ADMIN", "ADMIN")
+                .requestMatchers("/api/audit-logs/**").hasAnyRole("SUPER_ADMIN", "ADMIN", "MANAGER", "TEAMLEAD")
 
                 // Health and monitoring endpoints
                 .requestMatchers("/actuator/health").permitAll()

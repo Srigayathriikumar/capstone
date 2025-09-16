@@ -26,9 +26,9 @@ type TabType = 'overview' | 'members' | 'resources' | 'requests' | 'audit' | 'up
 @Component({
   selector: 'app-teamdetails',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, CommonResourcesComponent, CreateProjectComponent, ButtonModule, CardModule, InputTextModule, DropdownModule, DialogModule, ToastModule, TableModule, BadgeModule, TagModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, ToastComponent, CommonResourcesComponent, CreateProjectComponent, ButtonModule, CardModule, InputTextModule, DropdownModule, DialogModule, ToastModule, TableModule, BadgeModule, TagModule],
   templateUrl: 'teamdetails.html',
-  styleUrls: ['./teamdetails.css', './resources-columns.css', './notifications.css', './add-resource-buttons.css', './audit-log.css', './resources-overview.css', './resource-overview-cards.css', './resource-access-modal.css']
+  styleUrls: ['./teamdetails.css', './resources-columns.css', './notifications.css', './add-resource-buttons.css', './audit-log.css', './resources-overview.css', './resource-overview-cards.css', './resource-access-modal.css', './add-user-modal.css', './equal-width-fix.css']
 })
 export class Teamdetails implements OnInit {
   team: Team | null = null;
@@ -66,6 +66,7 @@ export class Teamdetails implements OnInit {
   notifications: Notification[] = [];
   unreadNotificationCount: number = 0;
   showNotifications = false;
+  showUserDropdown = false;
   userAccessRequests: AccessRequest[] = [];
   pendingApprovalRequests: AccessRequest[] = [];
   userUploads: TeamResource[] = [];
@@ -131,6 +132,25 @@ export class Teamdetails implements OnInit {
       accessType: ['COMMON', [Validators.required]],
       allowedUserGroups: ['']
     });
+    
+    this.createUserForm = this.fb.group({
+      username: ['', [Validators.required, Validators.minLength(3)]],
+      email: ['', [Validators.required, Validators.email]],
+      fullName: ['', [Validators.required, Validators.minLength(2)]],
+      role: ['', [Validators.required]]
+    });
+    
+    this.profileSettingsForm = this.fb.group({
+      username: [{ value: '', disabled: true }],
+      email: ['', [Validators.required, Validators.email]],
+      fullName: [''],
+      role: [{ value: '', disabled: true }],
+      timezone: ['UTC'],
+      language: ['en'],
+      emailNotifications: [true]
+    });
+    
+
   }
 
   ngOnInit(): void {
@@ -600,6 +620,7 @@ export class Teamdetails implements OnInit {
   onRequestAccess(): void {
     console.log('Creating access request for resource:', this.selectedResource);
     if (this.requestAccessForm.invalid || !this.selectedResource) {
+      this.toastService.error('Error', 'Please fill in all required fields');
       return;
     }
     
@@ -611,7 +632,7 @@ export class Teamdetails implements OnInit {
     
     this.teamService.createAccessRequest(this.currentUsername, requestData, this.team?.id || this.teamId).subscribe({
       next: (response) => {
-        alert('✅ Access request submitted successfully!');
+        this.toastService.success('Success', `Access request for "${this.selectedResource?.name}" submitted successfully!`);
         this.closeRequestAccessModal();
         this.loadUserAccessRequests();
         this.loadAccessRequests();
@@ -620,7 +641,7 @@ export class Teamdetails implements OnInit {
       error: (err) => {
         const errorMessage = err.error?.message || 'Failed to submit access request';
         console.error('Error:', err);
-        alert(`❌ ${errorMessage}`);
+        this.toastService.error('Error', errorMessage);
       }
     });
   }
@@ -705,6 +726,7 @@ export class Teamdetails implements OnInit {
     if (notification && !notification.isRead) {
       notification.isRead = true;
       this.unreadNotificationCount = Math.max(0, this.unreadNotificationCount - 1);
+      this.toastService.success('Success', 'Notification marked as read');
     }
   }
   
@@ -712,12 +734,20 @@ export class Teamdetails implements OnInit {
   isManagerOrAdmin(): boolean {
     const isManager = this.currentUserRole === 'PROJECT_MANAGER' || 
                      this.currentUserRole === 'ADMIN' || 
-                     this.currentUserRole === 'MANAGER';
+                     this.currentUserRole === 'MANAGER' ||
+                     this.currentUserRole === 'TEAMLEAD';
     console.log('isManagerOrAdmin check:', {
       currentUserRole: this.currentUserRole,
       isManager: isManager
     });
     return isManager;
+  }
+  
+  isManagerOrAdminOnly(): boolean {
+    const isManagerOnly = this.currentUserRole === 'PROJECT_MANAGER' || 
+                          this.currentUserRole === 'ADMIN' || 
+                          this.currentUserRole === 'MANAGER';
+    return isManagerOnly;
   }
   
   isTeamMember(): boolean {
@@ -873,15 +903,17 @@ export class Teamdetails implements OnInit {
           window.open(url, '_blank');
           // Clean up the object URL after a delay
           setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+          this.toastService.success('Success', `Opening "${resource.name}"`);
         },
         error: (err) => {
           console.error('Error viewing file:', err);
-          alert('Failed to view file');
+          this.toastService.error('Error', `Failed to view "${resource.name}"`);
         }
       });
     } else if (resource.resourceUrl) {
       // Open URL in new tab
       window.open(resource.resourceUrl, '_blank');
+      this.toastService.success('Success', `Opening "${resource.name}"`);
     }
   }
 
@@ -897,15 +929,17 @@ export class Teamdetails implements OnInit {
           link.click();
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
+          this.toastService.success('Success', `"${resource.name}" downloaded successfully`);
         },
         error: (err) => {
           console.error('Error downloading file:', err);
-          alert('Failed to download file');
+          this.toastService.error('Error', `Failed to download "${resource.name}"`);
         }
       });
     } else if (resource.resourceUrl) {
       // For URL resources, open in new tab
       window.open(resource.resourceUrl, '_blank');
+      this.toastService.success('Success', `Opening "${resource.name}"`);
     }
   }
 
@@ -926,7 +960,7 @@ export class Teamdetails implements OnInit {
   }
 
   hasApprovedAccess(resource: TeamResource): boolean {
-    // Managers have approved access to all resources
+    // Managers and team leads have approved access to all resources
     if (this.isManagerOrAdmin()) {
       return true;
     }
@@ -938,7 +972,7 @@ export class Teamdetails implements OnInit {
   }
 
   canAccessResource(resource: TeamResource): boolean {
-    // Managers and admins can access all resources
+    // Managers, admins, and team leads can access all resources
     if (this.isManagerOrAdmin()) {
       return true;
     }
@@ -1271,15 +1305,19 @@ export class Teamdetails implements OnInit {
   }
   
   exportAuditLog(): void {
-    // Implementation for exporting audit log
-    const csvContent = this.generateAuditCSV();
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `audit-log-team-${this.teamId}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
+    try {
+      const csvContent = this.generateAuditCSV();
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `audit-log-team-${this.teamId}-${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      this.toastService.success('Success', 'Audit log exported successfully');
+    } catch (error) {
+      this.toastService.error('Error', 'Failed to export audit log');
+    }
   }
   
   private generateAuditCSV(): string {
@@ -1315,6 +1353,7 @@ export class Teamdetails implements OnInit {
       case 'uploads': return 'My Uploads';
       case 'create-project': return 'Create New Project';
       case 'audit': return 'Audit Log';
+      case 'profile-settings': return 'Profile Settings';
       default: return 'Team Details';
     }
   }
@@ -1457,6 +1496,7 @@ export class Teamdetails implements OnInit {
         sentMessage.isCurrentUser = true;
         this.chatMessages.push(sentMessage);
         this.scrollToBottom();
+        this.toastService.success('Success', 'Message sent successfully');
       },
       error: (err) => {
         console.error('Error sending message:', err);
@@ -1507,14 +1547,19 @@ export class Teamdetails implements OnInit {
 
   selectProject(projectId: number): void {
     if (projectId !== this.teamId) {
+      const selectedProject = this.allProjects.find(p => p.id === projectId);
       this.closeProjectSwitcher();
+      this.toastService.success('Success', `Switching to project: ${selectedProject?.name || 'Unknown'}`);
       this.router.navigate(['/team', projectId]);
     }
   }
   
   logout(): void {
-    this.teamService.logout();
-    this.router.navigate(['/login']);
+    this.toastService.success('Success', 'Logged out successfully. Goodbye!');
+    setTimeout(() => {
+      this.teamService.logout();
+      this.router.navigate(['/login']);
+    }, 1000);
   }
   
   updateTeamStatus(teamId: number, event: any): void {
@@ -1524,9 +1569,11 @@ export class Teamdetails implements OnInit {
         if (this.team) {
           this.team.status = newStatus;
         }
+        this.toastService.success('Success', `Project status updated to ${newStatus}`);
       },
       error: (err) => {
         console.error('Error updating team status:', err);
+        this.toastService.error('Error', 'Failed to update project status');
       }
     });
   }
@@ -1565,6 +1612,20 @@ export class Teamdetails implements OnInit {
   private searchSubject = new Subject<string>();
   isSearchingEmployees = false;
   searchNoResults = false;
+  
+  // Create User Modal
+  showCreateUserModal = false;
+  createUserForm!: FormGroup;
+  
+  // Profile Settings
+  profileSettingsForm!: FormGroup;
+  
+  // Add User to Project Modal
+  showAddUserToProjectModal = false;
+  availableUsers: any[] = [];
+  filteredUsers: any[] = [];
+  searchTerm = '';
+  selectedUser: any = null;
   
   showRequestDetails(request: any): void {
     this.selectedRequestDetails = request;
@@ -1729,7 +1790,8 @@ export class Teamdetails implements OnInit {
       this.teamService.createProject(projectData).subscribe({
         next: (response) => {
           console.log('Project created successfully:', response);
-          alert(`Project "${projectData.name}" created successfully! Manager and ${this.selectedEmployeeIds.length} members have been assigned.`);
+          this.toastService.success('Success', `Project "${projectData.name}" created successfully! Manager and ${this.selectedEmployeeIds.length} members assigned.`);
+          this.closeCreateProjectModal();
           this.resetForm();
           this.loadAllProjects();
           // Navigate to the new project if created successfully
@@ -1741,7 +1803,7 @@ export class Teamdetails implements OnInit {
         },
         error: (err) => {
           console.error('Error creating project:', err);
-          alert('Error: ' + (err.error?.message || 'Failed to create project'));
+          this.toastService.error('Error', err.error?.message || 'Failed to create project');
         }
       });
     } else {
@@ -1752,7 +1814,7 @@ export class Teamdetails implements OnInit {
           console.log(`${key} is invalid:`, control.errors);
         }
       });
-      alert('Please fill in all required fields');
+      this.toastService.error('Error', 'Please fill in all required fields');
     }
   }
   
@@ -1836,5 +1898,201 @@ export class Teamdetails implements OnInit {
     this.managerSearchTerm = '';
     this.memberSearchTerm = '';
     this.memberRoleFilter = '';
+  }
+  
+  // Create User Methods
+  openCreateUserModal(): void {
+    this.showCreateUserModal = true;
+    this.createUserForm.reset();
+  }
+  
+  closeCreateUserModal(): void {
+    this.showCreateUserModal = false;
+    this.createUserForm.reset();
+  }
+  
+  onCreateUser(): void {
+    if (this.createUserForm.invalid) {
+      return;
+    }
+    
+    const userData = {
+      username: this.createUserForm.get('username')?.value,
+      email: this.createUserForm.get('email')?.value,
+      fullName: this.createUserForm.get('fullName')?.value,
+      role: this.createUserForm.get('role')?.value
+    };
+    
+    this.teamService.createUser(userData).subscribe({
+      next: (response) => {
+        this.toastService.success('Success', `User ${userData.username} created successfully!`);
+        this.closeCreateUserModal();
+        this.loadMembers();
+        this.loadAllEmployees();
+      },
+      error: (err) => {
+        const errorMessage = err.error?.message || 'Failed to create user';
+        this.toastService.error('Error', errorMessage);
+      }
+    });
+  }
+  
+  // Add User to Project Methods
+  openAddUserToProjectModal(): void {
+    this.showAddUserToProjectModal = true;
+    this.loadAvailableUsers();
+    this.searchTerm = '';
+    this.selectedUser = null;
+  }
+  
+  closeAddUserToProjectModal(): void {
+    this.showAddUserToProjectModal = false;
+    this.searchTerm = '';
+    this.selectedUser = null;
+    this.filteredUsers = [];
+  }
+  
+  loadAvailableUsers(): void {
+    const currentMemberIds = this.members.map(m => m.id);
+    
+    // Complete user list from database
+    const allUsers = [
+      { id: 1, username: 'rajesh.admin', fullName: 'Rajesh Kumar', email: 'rajesh.admin@company.com', role: 'ADMIN' },
+      { id: 2, username: 'priya.manager', fullName: 'Priya Sharma', email: 'priya.manager@company.com', role: 'PROJECT_MANAGER' },
+      { id: 3, username: 'james.manager', fullName: 'James Wilson', email: 'james.manager@company.com', role: 'PROJECT_MANAGER' },
+      { id: 4, username: 'sarah.manager', fullName: 'Sarah Johnson', email: 'sarah.manager@company.com', role: 'PROJECT_MANAGER' },
+      { id: 5, username: 'mike.manager', fullName: 'Mike Davis', email: 'mike.manager@company.com', role: 'PROJECT_MANAGER' },
+      { id: 6, username: 'anna.manager', fullName: 'Anna Brown', email: 'anna.manager@company.com', role: 'PROJECT_MANAGER' },
+      { id: 7, username: 'adhnanjeff.teamlead', fullName: 'Adhnan Jeff', email: 'adhnanjeff.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 8, username: 'swetha.teamlead', fullName: 'Swetha', email: 'swetha.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 9, username: 'hari.teamlead', fullName: 'Hari', email: 'hari.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 10, username: 'sounder.teamlead', fullName: 'Sounder', email: 'sounder.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 11, username: 'tharanika.teamlead', fullName: 'Tharanika', email: 'tharanika.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 12, username: 'pradeep.teamlead', fullName: 'Pradeep', email: 'pradeep.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 13, username: 'adrin.teamlead', fullName: 'Adrin', email: 'adrin.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 14, username: 'lokesh.teamlead', fullName: 'Lokesh', email: 'lokesh.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 15, username: 'tom.teamlead', fullName: 'Tom Johnson', email: 'tom.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 16, username: 'jane.teamlead', fullName: 'Jane Miller', email: 'jane.teamlead@company.com', role: 'TEAMLEAD' },
+      { id: 17, username: 'arjun.dev', fullName: 'Arjun Singh', email: 'arjun.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 18, username: 'emily.dev', fullName: 'Emily Chen', email: 'emily.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 19, username: 'vikram.dev', fullName: 'Vikram Gupta', email: 'vikram.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 20, username: 'michael.dev', fullName: 'Michael Brown', email: 'michael.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 21, username: 'jennifer.dev', fullName: 'Jennifer Davis', email: 'jennifer.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 22, username: 'robert.dev', fullName: 'Robert Miller', email: 'robert.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 23, username: 'peter.dev', fullName: 'Peter Lee', email: 'peter.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 24, username: 'amy.dev', fullName: 'Amy Taylor', email: 'amy.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 25, username: 'chris.dev', fullName: 'Chris Anderson', email: 'chris.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 26, username: 'lisa.dev', fullName: 'Lisa Garcia', email: 'lisa.dev@company.com', role: 'TEAM_MEMBER' },
+      { id: 27, username: 'sophia.test', fullName: 'Sophia Martinez', email: 'sophia.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 28, username: 'ravi.test', fullName: 'Ravi Mehta', email: 'ravi.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 29, username: 'amanda.test', fullName: 'Amanda Wilson', email: 'amanda.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 30, username: 'kevin.test', fullName: 'Kevin Lee', email: 'kevin.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 31, username: 'nancy.test', fullName: 'Nancy White', email: 'nancy.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 32, username: 'mark.test', fullName: 'Mark Thompson', email: 'mark.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 33, username: 'helen.test', fullName: 'Helen Clark', email: 'helen.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 34, username: 'paul.test', fullName: 'Paul Rodriguez', email: 'paul.test@company.com', role: 'TEAM_MEMBER' },
+      { id: 35, username: 'jane.tester', fullName: 'Jane Tester', email: 'jane.tester@company.com', role: 'TEAM_MEMBER' }
+    ];
+    
+    this.availableUsers = allUsers.filter(user => !currentMemberIds.includes(user.id));
+    this.filteredUsers = [...this.availableUsers];
+  }
+  
+  onSearchUsers(): void {
+    if (!this.searchTerm.trim()) {
+      this.filteredUsers = [...this.availableUsers];
+      return;
+    }
+    
+    const term = this.searchTerm.toLowerCase();
+    this.filteredUsers = this.availableUsers.filter(user => 
+      user.username.toLowerCase().includes(term) ||
+      user.fullName.toLowerCase().includes(term) ||
+      user.email.toLowerCase().includes(term)
+    );
+  }
+  
+  selectUser(user: any): void {
+    this.selectedUser = user;
+    this.searchTerm = user.fullName;
+  }
+  
+  addUserToProject(): void {
+    if (!this.selectedUser) return;
+    
+    this.teamService.addUserToProject(this.selectedUser.id, this.teamId).subscribe({
+      next: () => {
+        this.toastService.success('Success', `${this.selectedUser.fullName} added successfully!`);
+        
+        // Add to local members list
+        const newMember = {
+          id: this.selectedUser.id,
+          username: this.selectedUser.username,
+          email: this.selectedUser.email,
+          role: this.selectedUser.role,
+          fullName: this.selectedUser.fullName
+        };
+        
+        if (newMember.role === 'PROJECT_MANAGER') {
+          this.manager = newMember;
+        } else {
+          this.teamMembers.push(newMember);
+        }
+        this.members.push(newMember);
+        
+        this.closeAddUserToProjectModal();
+      },
+      error: (err) => {
+        this.toastService.error('Error', 'Failed to add user to project');
+      }
+    });
+  }
+  
+  // User Profile Dropdown Methods
+  toggleUserDropdown(): void {
+    this.showUserDropdown = !this.showUserDropdown;
+  }
+  
+  openProfileSettings(): void {
+    this.showUserDropdown = false;
+    this.setActiveTab('profile-settings');
+    this.initializeProfileForm();
+  }
+  
+  initializeProfileForm(): void {
+    this.profileSettingsForm.patchValue({
+      username: this.currentUsername,
+      email: this.getCurrentUserEmail(),
+      fullName: this.currentUsername.split('.')[0] || this.currentUsername,
+      role: this.getCurrentUserRole(),
+      timezone: 'UTC',
+      language: 'en',
+      emailNotifications: true
+    });
+  }
+  
+  onUpdateProfile(): void {
+    if (this.profileSettingsForm.invalid) {
+      return;
+    }
+    
+    const profileData = {
+      email: this.profileSettingsForm.get('email')?.value,
+      fullName: this.profileSettingsForm.get('fullName')?.value,
+      timezone: this.profileSettingsForm.get('timezone')?.value,
+      language: this.profileSettingsForm.get('language')?.value,
+      emailNotifications: this.profileSettingsForm.get('emailNotifications')?.value
+    };
+    
+    // Simulate API call
+    setTimeout(() => {
+      this.toastService.success('Success', 'Profile updated successfully!');
+      this.profileSettingsForm.markAsPristine();
+    }, 500);
+  }
+  
+  resetProfileForm(): void {
+    this.initializeProfileForm();
+    this.profileSettingsForm.markAsPristine();
   }
 }
