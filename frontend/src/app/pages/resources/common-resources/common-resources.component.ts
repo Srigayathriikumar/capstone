@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TeamService, TeamResource, CreateResourceRequest } from '../../../services/team.service';
+import { LoadingService } from '../../../services/loading.service';
 
 @Component({
   selector: 'app-common-resources',
@@ -38,6 +39,8 @@ export class CommonResourcesComponent implements OnInit {
   addResourceForm: FormGroup;
   selectedFile: File | null = null;
   uploadMode: 'url' | 'file' = 'url';
+  
+  private loadingService = inject(LoadingService);
 
   constructor(
     private route: ActivatedRoute,
@@ -80,15 +83,18 @@ export class CommonResourcesComponent implements OnInit {
 
   loadResources(): void {
     this.loading = true;
+    this.loadingService.show();
     this.teamService.getCommonResources(this.teamId).subscribe({
       next: (resources) => {
         this.resources = resources || [];
         this.applyFilters();
         this.loading = false;
+        this.loadingService.hide();
       },
       error: (err) => {
         console.error('Error loading resources:', err);
         this.loading = false;
+        this.loadingService.hide();
       }
     });
   }

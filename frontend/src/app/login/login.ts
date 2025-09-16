@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
 import { TeamService } from '../services/team.service';
+import { LoadingService } from '../services/loading.service';
 
 @Component({
   selector: 'app-login',
@@ -16,6 +17,8 @@ export class Login {
   loginForm: FormGroup;
   loading = false;
   error = '';
+
+  private loadingService = inject(LoadingService);
 
   constructor(
     private fb: FormBuilder,
@@ -37,16 +40,22 @@ export class Login {
       this.authService.login(this.loginForm.value).subscribe({
         next: (success) => {
           if (success) {
+            this.loadingService.show();
             this.teamService.getTeams().subscribe({
               next: (teams) => {
                 if (teams && teams.length > 0) {
-                  this.router.navigate(['/team', teams[0].id]);
+                  setTimeout(() => {
+                    this.loadingService.hide();
+                    this.router.navigate(['/team', teams[0].id]);
+                  }, 2000);
                 } else {
+                  this.loadingService.hide();
                   this.error = 'No teams available';
                   this.loading = false;
                 }
               },
               error: () => {
+                this.loadingService.hide();
                 this.error = 'Failed to load teams';
                 this.loading = false;
               }

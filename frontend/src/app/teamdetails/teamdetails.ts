@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TeamService, Team, TeamMember, TeamResource, AccessRequest, CreateResourceRequest, ResourceAccess, AccessRequestDTO, Notification, ChatMessage } from '../services/team.service';
 import { ToastService } from '../services/toast.service';
+import { LoadingService } from '../services/loading.service';
 import { ButtonComponent } from '../components/ui/button/button.component';
 import { CardComponent } from '../components/ui/card/card.component';
 import { ToastComponent } from '../components/toast/toast.component';
@@ -236,6 +237,7 @@ export class Teamdetails implements OnInit {
 
   loadTeamData(): void {
     this.loading = true;
+    this.loadingService.show();
     
     this.teamService.getTeamById(this.teamId).subscribe({
       next: (team) => {
@@ -247,6 +249,7 @@ export class Teamdetails implements OnInit {
       error: (err) => {
         console.error('Error loading team:', err);
         this.loading = false;
+        this.loadingService.hide();
       }
     });
   }
@@ -329,6 +332,7 @@ export class Teamdetails implements OnInit {
   checkLoadingComplete(): void {
     if (this.members !== undefined && this.resources !== undefined && this.accessRequests !== undefined) {
       this.loading = false;
+      this.loadingService.hide();
       this.cdr.detectChanges();
     }
   }
@@ -459,15 +463,18 @@ export class Teamdetails implements OnInit {
 
   loadResourceAccess(resourceId: number): void {
     this.loadingResourceAccess = true;
+    this.loadingService.show();
     this.teamService.getResourceAccess(resourceId).subscribe({
       next: (access) => {
         this.resourceAccess = access || [];
         this.loadingResourceAccess = false;
+        this.loadingService.hide();
       },
       error: (err) => {
         console.error('Error loading resource access:', err);
         this.resourceAccess = [];
         this.loadingResourceAccess = false;
+        this.loadingService.hide();
       }
     });
   }
@@ -1624,8 +1631,12 @@ export class Teamdetails implements OnInit {
     if (projectId !== this.teamId) {
       const selectedProject = this.allProjects.find(p => p.id === projectId);
       this.closeProjectSwitcher();
+      this.loadingService.show();
       this.toastService.success('Success', `Switching to project: ${selectedProject?.name || 'Unknown'}`);
-      this.router.navigate(['/team', projectId]);
+      setTimeout(() => {
+        this.loadingService.hide();
+        this.router.navigate(['/team', projectId]);
+      }, 1500);
     }
   }
   
@@ -1713,6 +1724,8 @@ export class Teamdetails implements OnInit {
   // Revoke Access Modal
   showRevokeAccessModal = false;
   selectedUserForRevoke: { userId: number, resourceId: number, username: string } | null = null;
+  
+  private loadingService = inject(LoadingService);
   
   // Add User to Project Modal
   showAddUserToProjectModal = false;

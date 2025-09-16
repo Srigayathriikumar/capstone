@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TeamService, Team } from '../services/team.service';
 import { AuthService } from '../services/auth.service';
+import { LoadingService } from '../services/loading.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,6 +16,7 @@ export class Dashboard implements OnInit {
   teams: Team[] = [];
   loading = true;
   currentUser: any;
+  private loadingService = inject(LoadingService);
 
   constructor(
     private teamService: TeamService,
@@ -30,14 +32,17 @@ export class Dashboard implements OnInit {
   }
 
   loadTeams(): void {
+    this.loadingService.show();
     this.teamService.getTeams().subscribe({
       next: (teams) => {
         this.teams = teams;
         this.loading = false;
+        this.loadingService.hide();
       },
       error: (err) => {
         console.error('Error loading teams:', err);
         this.loading = false;
+        this.loadingService.hide();
       }
     });
   }

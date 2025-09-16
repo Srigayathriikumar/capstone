@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TeamService } from '../../services/team.service';
 import { ToastService } from '../../services/toast.service';
+import { LoadingService } from '../../services/loading.service';
 
 export interface AuditLogEntry {
   id: number;
@@ -276,6 +277,8 @@ export class AuditLogComponent implements OnInit {
   showDetailsModal = false;
   selectedEntry: AuditLogEntry | null = null;
   
+  private loadingService = inject(LoadingService);
+  
   get startIndex(): number {
     return (this.currentPage - 1) * this.pageSize;
   }
@@ -316,10 +319,12 @@ export class AuditLogComponent implements OnInit {
 
   loadAuditLogs(): void {
     this.loading = true;
+    this.loadingService.show();
     // Mock data for now - in a real app, this would call the backend
     this.auditEntries = this.generateMockAuditData();
     this.applyFilters();
     this.loading = false;
+    this.loadingService.hide();
   }
 
   generateMockAuditData(): AuditLogEntry[] {
