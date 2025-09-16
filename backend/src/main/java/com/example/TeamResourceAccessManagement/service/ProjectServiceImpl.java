@@ -47,6 +47,12 @@ public class ProjectServiceImpl implements ProjectService {
             addUserToProject(savedProject.getId(), projectRequestDTO.getManagerId());
         }
         
+        // Add team lead to project if specified
+        if (projectRequestDTO.getTeamLeadId() != null) {
+            System.out.println("Adding team lead with ID: " + projectRequestDTO.getTeamLeadId());
+            addUserToProject(savedProject.getId(), projectRequestDTO.getTeamLeadId());
+        }
+        
         // Add members to project if specified
         if (projectRequestDTO.getMemberIds() != null && !projectRequestDTO.getMemberIds().isEmpty()) {
             System.out.println("Adding " + projectRequestDTO.getMemberIds().size() + " members to project");

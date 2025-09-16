@@ -374,6 +374,10 @@ export class TeamService {
     return this.http.get<any[]>(`${this.apiUrl}/users/managers`, { headers: this.getHeaders() });
   }
   
+  getAllTeamLeads(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/users/teamleads`, { headers: this.getHeaders() });
+  }
+  
   getAllEmployees(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/users`, { headers: this.getHeaders() });
   }
@@ -392,5 +396,49 @@ export class TeamService {
   
   addUserToProject(userId: number, projectId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/projects/${projectId}/users/${userId}`, {}, { headers: this.getHeaders() });
+  }
+  
+  // Shared Documents methods
+  getSharedDocuments(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/shared-documents`, { headers: this.getHeaders() });
+  }
+  
+  shareDocumentWithFile(documentData: any, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('title', documentData.title);
+    formData.append('message', documentData.message);
+    formData.append('documentType', documentData.documentType);
+    formData.append('authorId', documentData.authorId.toString());
+    formData.append('authorName', documentData.authorName);
+    formData.append('authorRole', documentData.authorRole);
+    formData.append('file', file);
+    
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    });
+    
+    return this.http.post(`${this.apiUrl}/shared-documents/share-file`, formData, { headers });
+  }
+  
+  shareDocumentWithUrl(documentData: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/shared-documents/share-url`, documentData, { headers: this.getHeaders() });
+  }
+  
+  deleteSharedDocument(documentId: number, userId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/shared-documents/${documentId}?userId=${userId}`, { headers: this.getHeaders() });
+  }
+  
+  downloadSharedDocument(documentId: number): Observable<Blob> {
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}`
+    });
+    return this.http.get(`${this.apiUrl}/shared-documents/${documentId}/download`, { 
+      headers, 
+      responseType: 'blob' 
+    });
+  }
+  
+  removeUserFromProject(projectId: number, userId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/projects/${projectId}/users/${userId}`, { headers: this.getHeaders() });
   }
 }

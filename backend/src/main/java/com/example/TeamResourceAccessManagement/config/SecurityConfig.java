@@ -104,6 +104,11 @@ public class SecurityConfig {
                 .password(passwordEncoder.encode("lokesh123"))
                 .roles("TEAMLEAD")
                 .build(),
+            User.builder()
+                .username("jane.teamlead")
+                .password(passwordEncoder.encode("jane123"))
+                .roles("TEAMLEAD")
+                .build(),
             // Database Users - Team Members
             User.builder()
                 .username("arjun.dev")

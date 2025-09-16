@@ -160,4 +160,10 @@ public class UserController {
         List<UserResponseDTO> users = userService.searchUsers(query);
         return ResponseEntity.ok(users);
     }
+    
+    @GetMapping("/teamleads")
+    public ResponseEntity<List<UserResponseDTO>> getAllTeamLeads() {
+        List<UserResponseDTO> teamLeads = userService.getUsersByRole(User.UserRole.TEAMLEAD);
+        return ResponseEntity.ok(teamLeads);
+    }
 }

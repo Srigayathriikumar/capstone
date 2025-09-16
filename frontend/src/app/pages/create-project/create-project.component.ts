@@ -23,6 +23,7 @@ export class CreateProjectComponent implements OnInit {
   currentUserId: number = 0;
   currentUserRole: string = '';
   managerProjects: any[] = [];
+  availableTeamLeads: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -35,6 +36,7 @@ export class CreateProjectComponent implements OnInit {
     this.initializeForm();
     this.initializeUser();
     this.loadTeamMembers();
+    this.loadAvailableTeamLeads();
     this.loadManagerProjects();
   }
 
@@ -42,7 +44,8 @@ export class CreateProjectComponent implements OnInit {
     this.createProjectForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
-      status: ['ACTIVE', Validators.required]
+      status: ['ACTIVE', Validators.required],
+      teamLeadId: ['']
     });
   }
   
@@ -125,6 +128,7 @@ export class CreateProjectComponent implements OnInit {
         description: this.createProjectForm.get('description')?.value,
         status: this.createProjectForm.get('status')?.value,
         managerId: this.currentUserId, // Current user becomes the manager
+        teamLeadId: this.createProjectForm.get('teamLeadId')?.value ? parseInt(this.createProjectForm.get('teamLeadId')?.value) : null,
         memberIds: this.selectedMemberIds
       };
 
@@ -156,10 +160,23 @@ export class CreateProjectComponent implements OnInit {
     this.createProjectForm.reset({
       name: '',
       description: '',
-      status: 'ACTIVE'
+      status: 'ACTIVE',
+      teamLeadId: ''
     });
     this.selectedMemberIds = [];
     this.memberSearchTerm = '';
+  }
+  
+  loadAvailableTeamLeads(): void {
+    this.teamService.getAllTeamLeads().subscribe({
+      next: (teamLeads) => {
+        this.availableTeamLeads = teamLeads || [];
+      },
+      error: (err) => {
+        console.error('Error loading team leads:', err);
+        this.availableTeamLeads = [];
+      }
+    });
   }
 
   loadManagerProjects(): void {

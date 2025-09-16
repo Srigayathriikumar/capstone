@@ -17,6 +17,11 @@
       </div>
     </div>
     <div class="navbar-right">
+      <button class="nav-btn" (click)="openSharedDocuments()" title="Shared Documents">
+        <i class="pi pi-share-alt"></i>
+        <span>Shared Documents</span>
+      </button>
+      
       <div class="notification-container">
         <button class="nav-btn" (click)="toggleNotifications()" title="Notifications">
           <i class="pi pi-bell"></i>
@@ -505,6 +510,11 @@
               <p>{{ member.email }}</p>
               <span class="member-role">{{ member.role }}</span>
             </div>
+            <div class="member-actions" *ngIf="isManagerOrAdmin()">
+              <button class="btn btn-sm btn-danger" (click)="removeUserFromTeam(member.id, member.username)" title="Remove from team">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
           </div>
         </div>
         <div class="empty-state" *ngIf="teamMembers.length === 0">
@@ -753,6 +763,64 @@
     <!-- Create Project Tab -->
     <div class="tab-panel" *ngIf="activeTab === 'create-project'">
       <app-create-project></app-create-project>
+    </div>
+
+    <!-- Shared Documents Tab -->
+    <div class="tab-panel" *ngIf="activeTab === 'shared-documents'">
+      <div class="shared-documents-container">
+        <div class="shared-documents-header">
+          <h3><i class="pi pi-share-alt"></i> Shared Documents</h3>
+          <p>Company-wide document sharing for all employees</p>
+          <button class="btn btn-primary" (click)="openShareDocumentModal()">
+            <i class="pi pi-plus"></i> Share Document
+          </button>
+        </div>
+        
+        <div class="shared-documents-content">
+          <div class="documents-grid">
+            <div class="shared-document-card" *ngFor="let doc of sharedDocuments">
+              <div class="document-header">
+                <div class="document-icon">
+                  <i class="{{ getDocumentIcon(doc.type) }}"></i>
+                </div>
+                <div class="document-info">
+                  <h4>{{ doc.title }}</h4>
+                  <p class="document-message">{{ doc.message }}</p>
+                </div>
+              </div>
+              
+              <div class="document-meta">
+                <div class="author-info">
+                  <div class="author-avatar">{{ doc.authorName.charAt(0).toUpperCase() }}</div>
+                  <div class="author-details">
+                    <span class="author-name">{{ doc.authorName }}</span>
+                    <span class="author-role">{{ doc.authorRole }}</span>
+                  </div>
+                </div>
+                <span class="share-date">{{ doc.sharedAt | date:'short' }}</span>
+              </div>
+              
+              <div class="document-actions">
+                <button class="btn btn-sm btn-primary" (click)="viewSharedDocument(doc)" title="View Document">
+                  <i class="pi pi-eye"></i> View
+                </button>
+                <button class="btn btn-sm btn-secondary" (click)="downloadSharedDocument(doc)" title="Download">
+                  <i class="pi pi-download"></i> Download
+                </button>
+                <button class="btn btn-sm btn-danger" *ngIf="doc.authorId === currentUserId" (click)="deleteSharedDocument(doc.id)" title="Delete">
+                  <i class="pi pi-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="empty-state" *ngIf="sharedDocuments.length === 0">
+            <i class="pi pi-share-alt" style="font-size: 48px; color: #ccc;"></i>
+            <h3>No shared documents yet</h3>
+            <p>Be the first to share a document with the company!</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Profile Settings Tab -->
@@ -1467,6 +1535,16 @@
         </div>
         
         <div class="form-group">
+          <label for="teamLead">Team Lead</label>
+          <select id="teamLead" formControlName="teamLeadId" class="form-control">
+            <option value="">Select Team Lead (Optional)</option>
+            <option *ngFor="let teamLead of availableTeamLeads" [value]="teamLead.id">
+              {{ teamLead.username }} ({{ teamLead.email }})
+            </option>
+          </select>
+        </div>
+        
+        <div class="form-group">
           <label for="teamMembers">Team Members</label>
           <div class="employee-dropdown-container" (click)="$event.stopPropagation()">
             <div class="dropdown-search">
@@ -1660,6 +1738,134 @@
             <i class="pi pi-check"></i> Add User
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Document Modal -->
+  <div class="modal-overlay" *ngIf="showShareDocumentModal" (click)="closeShareDocumentModal()">
+    <div class="modal-content scrollable-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="pi pi-share-alt"></i> Share Document</h3>
+        <button class="close-btn" (click)="closeShareDocumentModal()">×</button>
+      </div>
+      
+      <form [formGroup]="shareDocumentForm" (ngSubmit)="onShareDocument()">
+        <div class="form-group">
+          <label for="docTitle">Document Title *</label>
+          <input type="text" id="docTitle" formControlName="title" class="form-control" placeholder="Enter document title">
+        </div>
+        
+        <div class="form-group">
+          <label for="docMessage">Message *</label>
+          <textarea id="docMessage" formControlName="message" class="form-control" rows="3" placeholder="Add a message about this document"></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label for="docType">Document Type *</label>
+          <select id="docType" formControlName="type" class="form-control">
+            <option value="PDF">PDF Document</option>
+            <option value="DOC">Word Document</option>
+            <option value="DOCX">Word Document (DOCX)</option>
+            <option value="XLS">Excel Spreadsheet</option>
+            <option value="XLSX">Excel Spreadsheet (XLSX)</option>
+            <option value="PPT">PowerPoint Presentation</option>
+            <option value="PPTX">PowerPoint Presentation (PPTX)</option>
+            <option value="TXT">Text File</option>
+            <option value="CSV">CSV File</option>
+            <option value="JSON">JSON File</option>
+            <option value="XML">XML File</option>
+            <option value="IMAGE">Image File</option>
+            <option value="VIDEO">Video File</option>
+            <option value="AUDIO">Audio File</option>
+            <option value="ZIP">Archive/ZIP File</option>
+            <option value="GOOGLE_DRIVE">Google Drive Link</option>
+            <option value="ONEDRIVE">OneDrive Link</option>
+            <option value="DROPBOX">Dropbox Link</option>
+            <option value="SHAREPOINT">SharePoint Link</option>
+            <option value="GITHUB">GitHub Repository</option>
+            <option value="GITLAB">GitLab Repository</option>
+            <option value="CONFLUENCE">Confluence Page</option>
+            <option value="JIRA">Jira Ticket</option>
+            <option value="TRELLO">Trello Board</option>
+            <option value="SLACK">Slack Channel</option>
+            <option value="TEAMS">Microsoft Teams</option>
+            <option value="ZOOM">Zoom Recording</option>
+            <option value="YOUTUBE">YouTube Video</option>
+            <option value="WEBSITE">Website/URL</option>
+            <option value="API">API Documentation</option>
+            <option value="DATABASE">Database Resource</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        
+        <div class="upload-mode-selector">
+          <label>Share Type:</label>
+          <div class="mode-buttons">
+            <button type="button" 
+                    class="mode-btn" 
+                    [class.active]="shareMode === 'url'"
+                    (click)="setShareMode('url')">
+              <i class="pi pi-link"></i> URL/Link
+            </button>
+            <button type="button" 
+                    class="mode-btn" 
+                    [class.active]="shareMode === 'file'"
+                    (click)="setShareMode('file')">
+              <i class="pi pi-upload"></i> File Upload
+            </button>
+          </div>
+        </div>
+        
+        <div class="form-group" *ngIf="shareMode === 'url'">
+          <label for="docUrl">Document URL *</label>
+          <input type="url" id="docUrl" formControlName="documentUrl" class="form-control" placeholder="https://example.com/document">
+        </div>
+        
+        <div class="form-group" *ngIf="shareMode === 'file'">
+          <label for="docFile">Select File *</label>
+          <input type="file" id="docFile" (change)="onDocumentFileSelected($event)" class="form-control">
+          <div class="file-info" *ngIf="selectedDocumentFile">
+            <p>Selected: {{ selectedDocumentFile.name }} ({{ formatFileSize(selectedDocumentFile.size) }})</p>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeShareDocumentModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="shareDocumentForm.invalid || (shareMode === 'file' && !selectedDocumentFile)">
+            <i class="pi pi-share-alt"></i> Share Document
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Remove User Modal -->
+  <div class="modal-overlay" *ngIf="showRemoveUserModal" (click)="closeRemoveUserModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="pi pi-exclamation-triangle"></i> Remove Team Member</h3>
+        <button class="close-btn" (click)="closeRemoveUserModal()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="warning-message">
+          <i class="pi pi-exclamation-triangle warning-icon"></i>
+          <div class="warning-text">
+            <h4>Are you sure you want to remove this team member?</h4>
+            <p>This action will remove <strong>{{ selectedUserToRemove?.username }}</strong> from the team and revoke their access to team resources.</p>
+            <p class="warning-note">This action cannot be undone.</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeRemoveUserModal()">
+          <i class="pi pi-times"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-primary remove-user-btn" (click)="confirmRemoveUser()">
+          <i class="pi pi-trash"></i> Remove User
+        </button>
       </div>
     </div>
   </div>

@@ -150,6 +150,14 @@ export class Teamdetails implements OnInit {
       emailNotifications: [true]
     });
     
+    this.shareDocumentForm = this.fb.group({
+      title: ['', [Validators.required]],
+      message: ['', [Validators.required]],
+      type: ['PDF', [Validators.required]],
+      documentUrl: [''],
+      shareMode: ['url']
+    });
+    
 
   }
 
@@ -399,7 +407,7 @@ export class Teamdetails implements OnInit {
     if (this.uploadMode === 'file' && this.selectedFile) {
       this.teamService.createResourceWithFile(this.selectedFile, resourceData).subscribe({
         next: (response) => {
-          this.toastService.success('Success', 'Resource with file uploaded successfully!');
+          this.toastService.success('Success', `${this.selectedAccessType === 'COMMON' ? 'Common' : 'Controlled'} resource "${resourceData.name}" uploaded successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
           this.loadUserUploads();
@@ -413,7 +421,7 @@ export class Teamdetails implements OnInit {
       // Handle URL-based resource
       this.teamService.createResource(resourceData).subscribe({
         next: (response) => {
-          this.toastService.success('Success', 'Resource added successfully!');
+          this.toastService.success('Success', `${this.selectedAccessType === 'COMMON' ? 'Common' : 'Controlled'} resource "${resourceData.name}" added successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
           this.loadUserUploads();
@@ -903,7 +911,6 @@ export class Teamdetails implements OnInit {
           window.open(url, '_blank');
           // Clean up the object URL after a delay
           setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-          this.toastService.success('Success', `Opening "${resource.name}"`);
         },
         error: (err) => {
           console.error('Error viewing file:', err);
@@ -913,7 +920,6 @@ export class Teamdetails implements OnInit {
     } else if (resource.resourceUrl) {
       // Open URL in new tab
       window.open(resource.resourceUrl, '_blank');
-      this.toastService.success('Success', `Opening "${resource.name}"`);
     }
   }
 
@@ -929,7 +935,6 @@ export class Teamdetails implements OnInit {
           link.click();
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
-          this.toastService.success('Success', `"${resource.name}" downloaded successfully`);
         },
         error: (err) => {
           console.error('Error downloading file:', err);
@@ -939,7 +944,6 @@ export class Teamdetails implements OnInit {
     } else if (resource.resourceUrl) {
       // For URL resources, open in new tab
       window.open(resource.resourceUrl, '_blank');
-      this.toastService.success('Success', `Opening "${resource.name}"`);
     }
   }
 
@@ -1354,6 +1358,7 @@ export class Teamdetails implements OnInit {
       case 'create-project': return 'Create New Project';
       case 'audit': return 'Audit Log';
       case 'profile-settings': return 'Profile Settings';
+      case 'shared-documents': return 'Shared Documents';
       default: return 'Team Details';
     }
   }
@@ -1601,6 +1606,7 @@ export class Teamdetails implements OnInit {
   availableManagers: any[] = [];
   filteredManagers: any[] = [];
   selectedManager: any = null;
+  availableTeamLeads: any[] = [];
   managerSearchTerm = '';
   showManagerDropdown = false;
   allEmployees: any[] = [];
@@ -1619,6 +1625,17 @@ export class Teamdetails implements OnInit {
   
   // Profile Settings
   profileSettingsForm!: FormGroup;
+  
+  // Shared Documents
+  sharedDocuments: any[] = [];
+  showShareDocumentModal = false;
+  shareDocumentForm!: FormGroup;
+  shareMode: 'url' | 'file' = 'url';
+  selectedDocumentFile: File | null = null;
+  
+  // Remove User Modal
+  showRemoveUserModal = false;
+  selectedUserToRemove: { id: number, username: string } | null = null;
   
   // Add User to Project Modal
   showAddUserToProjectModal = false;
@@ -1640,6 +1657,7 @@ export class Teamdetails implements OnInit {
   openCreateProjectModal(): void {
     this.initializeCreateProjectForm();
     this.loadAvailableManagers();
+    this.loadAvailableTeamLeads();
     this.loadAllEmployees();
     this.showCreateProjectModal = true;
   }
@@ -1659,7 +1677,8 @@ export class Teamdetails implements OnInit {
       name: ['', [Validators.required, Validators.minLength(3)]],
       description: ['', [Validators.required, Validators.minLength(10)]],
       status: ['ACTIVE', Validators.required],
-      managerId: ['', Validators.required]
+      managerId: ['', Validators.required],
+      teamLeadId: ['']
     });
   }
   
@@ -1686,6 +1705,18 @@ export class Teamdetails implements OnInit {
           { id: 3, username: 'james.manager', email: 'james@company.com', role: 'PROJECT_MANAGER' }
         ];
         this.filteredManagers = [...this.availableManagers];
+      }
+    });
+  }
+  
+  loadAvailableTeamLeads(): void {
+    this.teamService.getAllTeamLeads().subscribe({
+      next: (teamLeads) => {
+        this.availableTeamLeads = teamLeads || [];
+      },
+      error: (err) => {
+        console.error('Error loading team leads:', err);
+        this.availableTeamLeads = [];
       }
     });
   }
@@ -1782,6 +1813,7 @@ export class Teamdetails implements OnInit {
         description: this.createProjectForm.get('description')?.value,
         status: this.createProjectForm.get('status')?.value,
         managerId: parseInt(this.createProjectForm.get('managerId')?.value),
+        teamLeadId: this.createProjectForm.get('teamLeadId')?.value ? parseInt(this.createProjectForm.get('teamLeadId')?.value) : null,
         memberIds: this.selectedEmployeeIds
       };
       
@@ -2094,5 +2126,183 @@ export class Teamdetails implements OnInit {
   resetProfileForm(): void {
     this.initializeProfileForm();
     this.profileSettingsForm.markAsPristine();
+  }
+  
+  // Shared Documents Methods
+  openSharedDocuments(): void {
+    this.setActiveTab('shared-documents');
+    this.loadSharedDocuments();
+  }
+  
+  loadSharedDocuments(): void {
+    this.teamService.getSharedDocuments().subscribe({
+      next: (documents) => {
+        this.sharedDocuments = documents || [];
+      },
+      error: (err) => {
+        console.error('Error loading shared documents:', err);
+        this.toastService.error('Error', 'Failed to load shared documents');
+        this.sharedDocuments = [];
+      }
+    });
+  }
+  
+  openShareDocumentModal(): void {
+    this.showShareDocumentModal = true;
+    this.shareDocumentForm.reset({
+      title: '',
+      message: '',
+      type: 'PDF',
+      documentUrl: '',
+      shareMode: 'url'
+    });
+  }
+  
+  closeShareDocumentModal(): void {
+    this.showShareDocumentModal = false;
+    this.selectedDocumentFile = null;
+    this.shareMode = 'url';
+  }
+  
+  setShareMode(mode: 'url' | 'file'): void {
+    this.shareMode = mode;
+    this.shareDocumentForm.patchValue({ shareMode: mode });
+    
+    if (mode === 'file') {
+      this.shareDocumentForm.get('documentUrl')?.clearValidators();
+    } else {
+      this.shareDocumentForm.get('documentUrl')?.setValidators([Validators.required]);
+    }
+    this.shareDocumentForm.get('documentUrl')?.updateValueAndValidity();
+  }
+  
+  onDocumentFileSelected(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedDocumentFile = file;
+    }
+  }
+  
+  onShareDocument(): void {
+    if (this.shareDocumentForm.invalid) {
+      this.toastService.error('Error', 'Please fill in all required fields');
+      return;
+    }
+    
+    const documentData = {
+      title: this.shareDocumentForm.get('title')?.value,
+      message: this.shareDocumentForm.get('message')?.value,
+      documentType: this.shareDocumentForm.get('type')?.value,
+      authorId: this.currentUserId,
+      authorName: this.currentUsername,
+      authorRole: this.getCurrentUserRole(),
+      documentUrl: this.shareMode === 'url' ? this.shareDocumentForm.get('documentUrl')?.value : null
+    };
+    
+    if (this.shareMode === 'file' && this.selectedDocumentFile) {
+      this.teamService.shareDocumentWithFile(documentData, this.selectedDocumentFile).subscribe({
+        next: (response) => {
+          this.toastService.success('Success', `Document "${documentData.title}" shared successfully!`);
+          this.closeShareDocumentModal();
+          this.loadSharedDocuments();
+        },
+        error: (err) => {
+          this.toastService.error('Error', 'Failed to share document');
+        }
+      });
+    } else {
+      this.teamService.shareDocumentWithUrl(documentData).subscribe({
+        next: (response) => {
+          this.toastService.success('Success', `Document "${documentData.title}" shared successfully!`);
+          this.closeShareDocumentModal();
+          this.loadSharedDocuments();
+        },
+        error: (err) => {
+          this.toastService.error('Error', 'Failed to share document');
+        }
+      });
+    }
+  }
+  
+  viewSharedDocument(doc: any): void {
+    if (doc.documentUrl) {
+      window.open(doc.documentUrl, '_blank');
+    }
+  }
+  
+  downloadSharedDocument(doc: any): void {
+    if (doc.documentUrl) {
+      window.open(doc.documentUrl, '_blank');
+      this.toastService.success('Success', `Opening "${doc.title}"`);
+    } else if (doc.fileData || doc.fileName) {
+      this.teamService.downloadSharedDocument(doc.id).subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = doc.fileName || doc.title;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          this.toastService.success('Success', `"${doc.title}" downloaded successfully`);
+        },
+        error: (err) => {
+          this.toastService.error('Error', `Failed to download "${doc.title}"`);
+        }
+      });
+    }
+  }
+  
+  deleteSharedDocument(docId: number): void {
+    if (confirm('Are you sure you want to delete this shared document?')) {
+      this.teamService.deleteSharedDocument(docId, this.currentUserId).subscribe({
+        next: () => {
+          this.toastService.success('Success', 'Document deleted successfully');
+          this.loadSharedDocuments();
+        },
+        error: (err) => {
+          this.toastService.error('Error', 'Failed to delete document');
+        }
+      });
+    }
+  }
+  
+  getDocumentIcon(type: string): string {
+    switch (type) {
+      case 'PDF': return 'pi pi-file-pdf';
+      case 'DOC': return 'pi pi-file-edit';
+      case 'XLS': return 'pi pi-table';
+      case 'PPT': return 'pi pi-desktop';
+      case 'IMAGE': return 'pi pi-image';
+      case 'TXT': return 'pi pi-file';
+      default: return 'pi pi-file';
+    }
+  }
+  
+  removeUserFromTeam(userId: number, username: string): void {
+    this.selectedUserToRemove = { id: userId, username: username };
+    this.showRemoveUserModal = true;
+  }
+  
+  confirmRemoveUser(): void {
+    if (this.selectedUserToRemove) {
+      const username = this.selectedUserToRemove.username;
+      this.teamService.removeUserFromProject(this.teamId, this.selectedUserToRemove.id).subscribe({
+        next: () => {
+          this.toastService.success('Success', `${username} has been removed from the team`);
+          this.loadTeamData();
+          this.closeRemoveUserModal();
+        },
+        error: (err: any) => {
+          this.toastService.error('Error', 'Failed to remove user from team');
+        }
+      });
+    }
+  }
+  
+  closeRemoveUserModal(): void {
+    this.showRemoveUserModal = false;
+    this.selectedUserToRemove = null;
   }
 }

@@ -18,6 +18,8 @@ public class ProjectRequestDTO {
     
     private Long managerId;
     
+    private Long teamLeadId;
+    
     private List<Long> memberIds;
     
     // Constructors
@@ -41,6 +43,9 @@ public class ProjectRequestDTO {
     
     public Long getManagerId() { return managerId; }
     public void setManagerId(Long managerId) { this.managerId = managerId; }
+    
+    public Long getTeamLeadId() { return teamLeadId; }
+    public void setTeamLeadId(Long teamLeadId) { this.teamLeadId = teamLeadId; }
     
     public List<Long> getMemberIds() { return memberIds; }
     public void setMemberIds(List<Long> memberIds) { this.memberIds = memberIds; }
