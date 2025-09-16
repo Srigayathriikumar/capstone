@@ -13,6 +13,7 @@ import com.example.TeamResourceAccessManagement.repository.PermissionRepository;
 import com.example.TeamResourceAccessManagement.repository.AccessRequestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -34,9 +35,39 @@ public class UserServiceImpl implements UserService {
     private AccessRequestRepository accessRequestRepository;
     
     @Override
+    @Transactional
     public UserResponseDTO createUser(UserRequestDTO userRequestDTO) {
+        System.out.println("=== CREATING NEW USER ===");
+        System.out.println("Username: " + userRequestDTO.getUsername());
+        System.out.println("Email: " + userRequestDTO.getEmail());
+        System.out.println("Full Name: " + userRequestDTO.getFullName());
+        System.out.println("Role: " + userRequestDTO.getRole());
+        
+        // Check if username already exists
+        if (userRepository.findByUsername(userRequestDTO.getUsername()).isPresent()) {
+            System.out.println("ERROR: Username already exists: " + userRequestDTO.getUsername());
+            throw new RuntimeException("Username already exists: " + userRequestDTO.getUsername());
+        }
+        
+        // Check if email already exists
+        if (userRepository.findByEmail(userRequestDTO.getEmail()).isPresent()) {
+            System.out.println("ERROR: Email already exists: " + userRequestDTO.getEmail());
+            throw new RuntimeException("Email already exists: " + userRequestDTO.getEmail());
+        }
+        
         User user = UserMapper.toEntity(userRequestDTO);
         User savedUser = userRepository.save(user);
+        userRepository.flush(); // Force immediate database write
+        
+        System.out.println("USER CREATED SUCCESSFULLY!");
+        System.out.println("Generated ID: " + savedUser.getId());
+        System.out.println("Username: " + savedUser.getUsername());
+        System.out.println("Email: " + savedUser.getEmail());
+        System.out.println("Full Name: " + savedUser.getFullName());
+        System.out.println("Role: " + savedUser.getRole());
+        System.out.println("Created At: " + savedUser.getCreatedAt());
+        System.out.println("=========================");
+        
         return UserMapper.toResponse(savedUser);
     }
     
@@ -60,7 +91,7 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public List<UserResponseDTO> getAllUsers() {
-        return userRepository.findAll().stream()
+        return userRepository.findAllOrderByCreatedAtDesc().stream()
             .map(UserMapper::toResponse)
             .collect(Collectors.toList());
     }
@@ -212,14 +243,19 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public List<UserResponseDTO> searchUsers(String query) {
-        String searchQuery = query.toLowerCase();
-        return userRepository.findAll().stream()
-            .filter(user -> 
-                user.getUsername().toLowerCase().contains(searchQuery) ||
-                user.getEmail().toLowerCase().contains(searchQuery) ||
-                (user.getFullName() != null && user.getFullName().toLowerCase().contains(searchQuery)) ||
-                user.getRole().toString().toLowerCase().contains(searchQuery)
-            )
+        System.out.println("\nSEARCHING FOR: '" + query + "'");
+        
+        if (query == null || query.trim().isEmpty()) {
+            List<UserResponseDTO> allUsers = getAllUsers();
+            System.out.println("Empty query - returning all " + allUsers.size() + " users");
+            return allUsers;
+        }
+        
+        List<User> users = userRepository.searchUsers(query.trim());
+        System.out.println("Native SQL search found: " + users.size() + " users");
+        users.forEach(user -> System.out.println("Found: " + user.getUsername() + " | " + user.getEmail()));
+        
+        return users.stream()
             .map(UserMapper::toResponse)
             .collect(Collectors.toList());
     }

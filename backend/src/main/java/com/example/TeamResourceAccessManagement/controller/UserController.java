@@ -23,8 +23,17 @@ public class UserController {
     @PostMapping
     @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN') or hasRole('MANAGER')")
     public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserRequestDTO userRequestDTO) {
-        UserResponseDTO user = userService.createUser(userRequestDTO);
-        return new ResponseEntity<>(user, HttpStatus.CREATED);
+        System.out.println("\nUSER CREATION REQUEST RECEIVED IN CONTROLLER");
+        System.out.println("Request Data: " + userRequestDTO.getUsername() + " | " + userRequestDTO.getEmail());
+        
+        try {
+            UserResponseDTO user = userService.createUser(userRequestDTO);
+            System.out.println("CONTROLLER: User creation successful, returning response");
+            return new ResponseEntity<>(user, HttpStatus.CREATED);
+        } catch (Exception e) {
+            System.out.println("CONTROLLER: User creation failed - " + e.getMessage());
+            throw e;
+        }
     }
 
     @GetMapping("/{id}")
@@ -152,12 +161,18 @@ public class UserController {
     @GetMapping("/employees")
     public ResponseEntity<List<UserResponseDTO>> getAllEmployees() {
         List<UserResponseDTO> employees = userService.getAllUsers();
+        System.out.println("\nGET ALL EMPLOYEES REQUEST");
+        System.out.println("Total employees found: " + employees.size());
+        employees.forEach(emp -> System.out.println("- " + emp.getUsername() + " (" + emp.getEmail() + ")"));
         return ResponseEntity.ok(employees);
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<UserResponseDTO>> searchUsers(@RequestParam String query) {
+        System.out.println("\nSEARCH USERS REQUEST: '" + query + "'");
         List<UserResponseDTO> users = userService.searchUsers(query);
+        System.out.println("Search results: " + users.size() + " users found");
+        users.forEach(user -> System.out.println("- " + user.getUsername() + " (" + user.getEmail() + ")"));
         return ResponseEntity.ok(users);
     }
     
@@ -165,5 +180,21 @@ public class UserController {
     public ResponseEntity<List<UserResponseDTO>> getAllTeamLeads() {
         List<UserResponseDTO> teamLeads = userService.getUsersByRole(User.UserRole.TEAMLEAD);
         return ResponseEntity.ok(teamLeads);
+    }
+    
+    @GetMapping("/debug/all")
+    public ResponseEntity<List<UserResponseDTO>> debugGetAllUsers() {
+        System.out.println("\nDEBUG: Getting all users from database");
+        List<UserResponseDTO> users = userService.getAllUsers();
+        System.out.println("Total users in database: " + users.size());
+        users.forEach(user -> System.out.println("DB User: " + user.getUsername() + " | " + user.getEmail() + " | ID: " + user.getId()));
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/debug/search/{query}")
+    public ResponseEntity<List<UserResponseDTO>> debugSearchUsers(@PathVariable String query) {
+        System.out.println("\nDEBUG SEARCH: " + query);
+        List<UserResponseDTO> users = userService.searchUsers(query);
+        return ResponseEntity.ok(users);
     }
 }

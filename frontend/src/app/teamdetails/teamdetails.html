@@ -54,7 +54,6 @@
         <button class="nav-btn user-profile-btn" (click)="toggleUserDropdown()" title="User Profile">
           <i class="pi pi-user"></i>
           <span>{{ currentUsername }}</span>
-          <i class="pi pi-angle-down dropdown-arrow"></i>
         </button>
         
         <div class="user-dropdown" *ngIf="showUserDropdown">
@@ -204,8 +203,82 @@
 
     <main class="tab-content">
     <!-- Overview Tab -->
-    <div class="tab-panel" *ngIf="activeTab === 'overview'" [class.manager-overview]="isManagerOrAdmin()" [class.user-overview]="!isManagerOrAdmin()">
-      <div class="overview-grid" [class.manager-grid]="isManagerOrAdmin()" [class.user-grid]="!isManagerOrAdmin()">
+    <div class="tab-panel" *ngIf="activeTab === 'overview'" [class.admin-overview]="isAdmin()" [class.manager-overview]="isManagerOrAdmin() && !isAdmin()" [class.user-overview]="!isManagerOrAdmin()">
+      
+      <!-- Admin System Overview -->
+      <div class="admin-system-overview" *ngIf="isAdmin()">
+        <div class="admin-header">
+          <h2><i class="pi pi-cog"></i> System Administration Dashboard</h2>
+          <p>Comprehensive system statistics and management overview</p>
+        </div>
+        
+        <div class="admin-stats-grid">
+          <div class="admin-stat-card projects">
+            <div class="stat-icon"><i class="pi pi-folder"></i></div>
+            <div class="stat-content">
+              <h3>{{ adminStats?.totalProjects || 0 }}</h3>
+              <p>Total Projects</p>
+              <div class="stat-breakdown">
+                <span class="active">{{ adminStats?.activeProjects || 0 }} Active</span>
+                <span class="completed">{{ adminStats?.completedProjects || 0 }} Completed</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="admin-stat-card users">
+            <div class="stat-icon"><i class="pi pi-users"></i></div>
+            <div class="stat-content">
+              <h3>{{ adminStats?.totalUsers || 0 }}</h3>
+              <p>Total Users</p>
+              <div class="stat-breakdown">
+                <span class="active">{{ adminStats?.activeUsers || 0 }} Active</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="admin-stat-card resources">
+            <div class="stat-icon"><i class="pi pi-database"></i></div>
+            <div class="stat-content">
+              <h3>{{ adminStats?.totalResources || 0 }}</h3>
+              <p>Total Resources</p>
+              <div class="stat-breakdown">
+                <span class="common">{{ adminStats?.commonResources || 0 }} Common</span>
+                <span class="controlled">{{ adminStats?.controlledResources || 0 }} Controlled</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="admin-stat-card requests">
+            <div class="stat-icon"><i class="pi pi-key"></i></div>
+            <div class="stat-content">
+              <h3>{{ adminStats?.totalAccessRequests || 0 }}</h3>
+              <p>Access Requests</p>
+              <div class="stat-breakdown">
+                <span class="pending">{{ adminStats?.pendingRequests || 0 }} Pending</span>
+                <span class="approved">{{ adminStats?.approvedRequests || 0 }} Approved</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="admin-actions">
+          <button class="admin-action-btn" (click)="navigateToUserManagement()">
+            <i class="pi pi-users"></i>
+            <span>Manage Users</span>
+          </button>
+          <button class="admin-action-btn" (click)="navigateToProjectManagement()">
+            <i class="pi pi-folder"></i>
+            <span>Manage Projects</span>
+          </button>
+          <button class="admin-action-btn" (click)="setActiveTab('audit')">
+            <i class="pi pi-chart-line"></i>
+            <span>View Audit Logs</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Regular Overview for Managers/Users -->
+      <div class="overview-grid" [class.manager-grid]="isManagerOrAdmin() && !isAdmin()" [class.user-grid]="!isManagerOrAdmin()" *ngIf="!isAdmin()">
         <!-- Manager View: Project Status Management -->
         <div class="overview-card status-card" *ngIf="isManagerOrAdmin()">
           <h3><i class="pi pi-cog"></i> Project Status</h3>
@@ -384,24 +457,26 @@
           </div>
         </div>
         
-        <!-- User View: Second Row - Professional Profile and Metrics -->
-        <div class="overview-card profile-card" *ngIf="!isManagerOrAdmin()">
-          <h3><i class="pi pi-id-card"></i> Professional Profile</h3>
-          <div class="user-info">
-            <div class="user-profile-image">
-              <img [src]="getUserAvatar()" 
-                   alt="User Avatar" 
-                   class="profile-img"
-                   (error)="onImageError($event)">
-              <div class="user-avatar-fallback">
-                {{ currentUsername.charAt(0).toUpperCase() }}
-              </div>
-            </div>
-            <div class="user-details">
-              <h4>{{ currentUsername }}</h4>
-              <p>{{ getCurrentUserEmail() }}</p>
-              <span class="user-role">{{ getCurrentUserRole() }}</span>
-            </div>
+        <!-- User View: Second Row - Quick Actions -->
+        <div class="overview-card quick-actions-card" *ngIf="!isManagerOrAdmin()">
+          <h3><i class="pi pi-bolt"></i> Quick Actions</h3>
+          <div class="quick-actions-grid">
+            <button class="quick-action-btn" (click)="setActiveTab('common-resources')">
+              <i class="pi pi-folder-open"></i>
+              <span>Browse Resources</span>
+            </button>
+            <button class="quick-action-btn" (click)="setActiveTab('requests')">
+              <i class="pi pi-key"></i>
+              <span>My Requests</span>
+            </button>
+            <button class="quick-action-btn" (click)="setActiveTab('uploads')">
+              <i class="pi pi-upload"></i>
+              <span>My Uploads</span>
+            </button>
+            <button class="quick-action-btn" (click)="setActiveTab('members')">
+              <i class="pi pi-users"></i>
+              <span>Team Members</span>
+            </button>
           </div>
         </div>
         
@@ -425,28 +500,6 @@
               </div>
               <span class="legend-text">High</span>
             </div>
-          </div>
-        </div>
-        
-        <div class="overview-card quick-actions-card" *ngIf="!isManagerOrAdmin()">
-          <h3><i class="pi pi-bolt"></i> Quick Actions</h3>
-          <div class="quick-actions-grid">
-            <button class="quick-action-btn" (click)="setActiveTab('common-resources')">
-              <i class="pi pi-folder-open"></i>
-              <span>Browse Resources</span>
-            </button>
-            <button class="quick-action-btn" (click)="setActiveTab('requests')">
-              <i class="pi pi-key"></i>
-              <span>My Requests</span>
-            </button>
-            <button class="quick-action-btn" (click)="setActiveTab('uploads')">
-              <i class="pi pi-upload"></i>
-              <span>My Uploads</span>
-            </button>
-            <button class="quick-action-btn" (click)="setActiveTab('members')">
-              <i class="pi pi-users"></i>
-              <span>Team Members</span>
-            </button>
           </div>
         </div>
         
@@ -701,7 +754,7 @@
               <button class="btn btn-sm btn-primary view-file-btn" *ngIf="canViewFile(resource)" (click)="viewFile(resource)" title="View File">
                 <i class="pi pi-eye"></i> View
               </button>
-              <button class="btn btn-sm btn-secondary download-file-btn" *ngIf="canViewFile(resource)" (click)="downloadFile(resource)" title="Download File">
+              <button class="btn btn-sm btn-secondary download-file-btn" *ngIf="resource.filePath || resource.fileData" (click)="downloadFile(resource)" title="Download File">
                 <i class="pi pi-download"></i> Download
               </button>
               <button class="btn btn-sm btn-info view-access-btn" (click)="showResourceAccess(resource)" title="View Access">
@@ -747,8 +800,8 @@
               <button class="btn btn-sm btn-primary" *ngIf="canAccessResource(resource)" (click)="viewFile(resource)">
                 <i class="pi pi-eye"></i> View
               </button>
-              <button class="btn btn-sm btn-warning" *ngIf="!hasApprovedAccess(resource) && isTeamMember()" (click)="openRequestAccessModal(resource)">
-                <i class="pi pi-key"></i> Request Access
+              <button class="btn btn-sm btn-info" *ngIf="isManagerOrAdmin()" (click)="showResourceAccess(resource)">
+                <i class="pi pi-users"></i> Access
               </button>
             </div>
           </div>
@@ -1323,44 +1376,85 @@
       </div>
       
       <div class="access-content">
+
+        
         <div class="loading" *ngIf="loadingResourceAccess">Loading access information...</div>
         
         <div class="access-info" *ngIf="!loadingResourceAccess">
-          <div class="user-groups-section" *ngIf="selectedResource?.allowedUserGroups">
-            <h4>Automatic Access Groups</h4>
-            <div class="group-badges">
+          
+          <!-- Always show user groups section for controlled resources -->
+          <div class="user-groups-section">
+            <h4><i class="pi pi-users"></i> Allowed User Groups</h4>
+            <div class="group-badges" *ngIf="selectedResource?.allowedUserGroups && selectedResource.allowedUserGroups.trim(); else noGroups">
               <span class="group-badge" *ngFor="let group of getGroupsArray(selectedResource.allowedUserGroups)">
-                {{ group }} users
+                <i class="pi pi-check-circle"></i> {{ group }} users
               </span>
             </div>
+            <ng-template #noGroups>
+              <div class="group-badges">
+                <span class="group-badge">
+                  <i class="pi pi-check-circle"></i> dev users
+                </span>
+                <span class="group-badge">
+                  <i class="pi pi-check-circle"></i> test users
+                </span>
+                <span class="group-badge">
+                  <i class="pi pi-check-circle"></i> manager users
+                </span>
+              </div>
+            </ng-template>
+            <p class="groups-description">Users from these groups have automatic access to this resource.</p>
           </div>
           
           <div class="users-section">
             <h4 *ngIf="selectedResource?.allowedUserGroups">Individual Access</h4>
-            <div class="access-list">
-              <div class="access-item" *ngFor="let access of resourceAccess">
-                <div class="user-info">
-                  <div class="user-avatar">{{ access.username ? access.username.charAt(0).toUpperCase() : 'U' }}</div>
-                  <div class="user-details">
-                    <h4>{{ access.username }}</h4>
-                    <p>{{ access.accessLevel }}</p>
-                  </div>
-                </div>
-                <div class="access-actions">
-                  <span class="status-badge granted">Access Granted</span>
-                  <button *ngIf="isManagerOrAdmin() && access.username !== currentUsername" class="btn btn-sm btn-danger revoke-btn" (click)="revokeUserAccess(access.userId)" title="Revoke Access">
-                    <i class="pi pi-times"></i> Revoke
-                  </button>
-                </div>
-              </div>
-              
-              <div class="empty-state" *ngIf="resourceAccess.length === 0 && (!selectedResource?.allowedUserGroups || selectedResource?.allowedUserGroups === '')">
-                <p>No users have access to this resource yet.</p>
-              </div>
-              <div class="empty-state" *ngIf="resourceAccess.length === 0 && selectedResource?.allowedUserGroups">
-                <p>No individual users have been granted access. Access is available through user groups above.</p>
-              </div>
+            
+            <div class="access-table-container" *ngIf="resourceAccess.length > 0; else noAccessUsers">
+              <table class="access-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Access Level</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let access of resourceAccess" class="access-row">
+                    <td>
+                      <div class="user-cell">
+                        <div class="user-avatar">{{ access.username ? access.username.charAt(0).toUpperCase() : 'U' }}</div>
+                        <span class="username">{{ access.username }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="access-level-badge" [class]="access.accessLevel?.toLowerCase()">{{ access.accessLevel }}</span>
+                    </td>
+                    <td>
+                      <span class="status-badge granted">Access Granted</span>
+                    </td>
+                    <td>
+                      <button *ngIf="isManagerOrAdmin() && access.username !== currentUsername" 
+                              class="btn btn-sm btn-danger revoke-btn" 
+                              (click)="revokeUserAccess(access.userId)" 
+                              title="Revoke Access">
+                        <i class="pi pi-times"></i> Revoke
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+            
+            <ng-template #noAccessUsers>
+              <div class="empty-state" *ngIf="!selectedResource?.allowedUserGroups || !selectedResource.allowedUserGroups.trim()">
+                <p><i class="pi pi-info-circle"></i> No users have access to this resource yet.</p>
+              </div>
+              <div class="empty-state" *ngIf="selectedResource?.allowedUserGroups && selectedResource.allowedUserGroups.trim()">
+                <p><i class="pi pi-users"></i> No individual users have been granted access.</p>
+                <p>Users from the groups above have automatic access to this resource.</p>
+              </div>
+            </ng-template>
           </div>
         </div>
       </div>
@@ -1982,3 +2076,20 @@
 </div>
 
 <app-toast></app-toast>
+  <!-- Revoke Access Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showRevokeAccessModal" (click)="closeRevokeAccessModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="pi pi-exclamation-triangle"></i> Revoke Access</h3>
+        <button class="close-btn" (click)="closeRevokeAccessModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to revoke access for <strong>{{ selectedUserForRevoke?.username }}</strong>?</p>
+        <p class="warning-text">This will remove their access to this resource and delete it from their uploads.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeRevokeAccessModal()">Cancel</button>
+        <button class="btn btn-danger" (click)="confirmRevokeAccess()">Revoke Access</button>
+      </div>
+    </div>
+  </div>

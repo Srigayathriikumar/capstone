@@ -623,6 +623,10 @@ export class ManagerResourcesComponent implements OnInit {
   sidebarHidden = false;
   currentUsername: string = '';
   showProjectSwitcher = false;
+  showNotifications = false;
+  showUserDropdown = false;
+  unreadNotificationCount = 0;
+  notifications: any[] = [];
   
   getStatusClass(status: string): string {
     return status ? `status-${status.toLowerCase()}` : 'status-unknown';
@@ -707,4 +711,35 @@ export class ManagerResourcesComponent implements OnInit {
     }
     this.closeProjectSwitcher();
   }
+
+  // Navbar methods
+  openSharedDocuments(): void {
+    this.router.navigate(['/team', this.teamId], { queryParams: { tab: 'shared-documents' } });
+  }
+
+  toggleNotifications(): void {
+    this.showNotifications = !this.showNotifications;
+  }
+
+  toggleUserDropdown(): void {
+    this.showUserDropdown = !this.showUserDropdown;
+  }
+
+  getCurrentUserEmail(): string {
+    return 'user@example.com'; // Placeholder implementation
+  }
+
+  getCurrentUserRole(): string {
+    return this.teamService.getCurrentUserRole();
+  }
+
+  openProfileSettings(): void {
+    this.router.navigate(['/team', this.teamId], { queryParams: { tab: 'profile-settings' } });
+  }
+
+  markNotificationAsRead(id: number): void {
+    // Implementation for marking notification as read
+  }
+
+
 }

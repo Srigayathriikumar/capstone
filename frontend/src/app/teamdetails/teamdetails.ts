@@ -28,7 +28,7 @@ type TabType = 'overview' | 'members' | 'resources' | 'requests' | 'audit' | 'up
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, ToastComponent, CommonResourcesComponent, CreateProjectComponent, ButtonModule, CardModule, InputTextModule, DropdownModule, DialogModule, ToastModule, TableModule, BadgeModule, TagModule],
   templateUrl: 'teamdetails.html',
-  styleUrls: ['./teamdetails.css', './resources-columns.css', './notifications.css', './add-resource-buttons.css', './audit-log.css', './resources-overview.css', './resource-overview-cards.css', './resource-access-modal.css', './add-user-modal.css', './equal-width-fix.css']
+  styleUrls: ['./teamdetails.css', './toast-notification.css']
 })
 export class Teamdetails implements OnInit {
   team: Team | null = null;
@@ -63,6 +63,7 @@ export class Teamdetails implements OnInit {
   currentUserId: number = 0;
   currentUsername: string = '';
   currentUserRole: string = '';
+  adminStats: any = null;
   notifications: Notification[] = [];
   unreadNotificationCount: number = 0;
   showNotifications = false;
@@ -211,6 +212,11 @@ export class Teamdetails implements OnInit {
     this.currentUserId = this.teamService.getCurrentUserId();
     this.currentUsername = this.teamService.getCurrentUsername();
     this.currentUserRole = this.teamService.getCurrentUserRole();
+    
+    if (this.currentUsername) {
+      this.toastService.success('Welcome', `Welcome back, ${this.currentUsername}!`);
+    }
+    
     console.log('User initialized:', {
       userId: this.currentUserId,
       username: this.currentUsername,
@@ -222,6 +228,9 @@ export class Teamdetails implements OnInit {
     this.loadUserUploads();
     if (this.isManagerOrAdmin()) {
       this.loadPendingApprovalRequests();
+    }
+    if (this.isAdmin()) {
+      this.loadAdminStatistics();
     }
   }
 
@@ -382,6 +391,12 @@ export class Teamdetails implements OnInit {
 
   onAddResource(): void {
     if (this.addResourceForm.invalid) {
+      this.toastService.error('Error', 'Please fill in all required fields');
+      return;
+    }
+    
+    if (this.uploadMode === 'file' && !this.selectedFile) {
+      this.toastService.error('Error', 'Please select a file to upload');
       return;
     }
     
@@ -390,45 +405,41 @@ export class Teamdetails implements OnInit {
       description: this.addResourceForm.get('description')?.value || '',
       type: this.addResourceForm.get('type')?.value || 'DATABASE',
       category: this.addResourceForm.get('category')?.value || 'OTHER',
-
       isGlobal: false,
       projectId: this.team?.id || this.teamId,
       allowedUserGroups: this.addResourceForm.get('allowedUserGroups')?.value || ''
     };
 
-    // Add URL if in URL mode
     if (this.uploadMode === 'url') {
       resourceData.resourceUrl = this.addResourceForm.get('resourceUrl')?.value || '';
     }
     
-    console.log('Sending resource data:', resourceData);
+    this.toastService.info('Processing', 'Adding resource...');
     
-    // Handle file upload
     if (this.uploadMode === 'file' && this.selectedFile) {
       this.teamService.createResourceWithFile(this.selectedFile, resourceData).subscribe({
         next: (response) => {
-          this.toastService.success('Success', `${this.selectedAccessType === 'COMMON' ? 'Common' : 'Controlled'} resource "${resourceData.name}" uploaded successfully!`);
+          this.toastService.success('Success', `Resource "${resourceData.name}" uploaded successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
           this.loadUserUploads();
         },
         error: (err) => {
-          const errorMessage = err.error?.message || err.message || 'Unknown error occurred';
-          this.toastService.error('Error', `Failed to upload resource: ${errorMessage}`);
+          const errorMessage = err.error?.message || 'Failed to upload resource';
+          this.toastService.error('Error', errorMessage);
         }
       });
     } else {
-      // Handle URL-based resource
       this.teamService.createResource(resourceData).subscribe({
         next: (response) => {
-          this.toastService.success('Success', `${this.selectedAccessType === 'COMMON' ? 'Common' : 'Controlled'} resource "${resourceData.name}" added successfully!`);
+          this.toastService.success('Success', `Resource "${resourceData.name}" added successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
           this.loadUserUploads();
         },
         error: (err) => {
-          const errorMessage = err.error?.message || err.message || 'Unknown error occurred';
-          this.toastService.error('Error', `Failed to add resource: ${errorMessage}`);
+          const errorMessage = err.error?.message || 'Failed to add resource';
+          this.toastService.error('Error', errorMessage);
         }
       });
     }
@@ -760,6 +771,41 @@ export class Teamdetails implements OnInit {
   
   isTeamMember(): boolean {
     return this.currentUserRole === 'TEAM_MEMBER' || this.currentUserRole === 'USER';
+  }
+
+  isSuperAdmin(): boolean {
+    const role = this.teamService.getCurrentUserRole();
+    return role === 'SUPER_ADMIN';
+  }
+
+  isAdmin(): boolean {
+    const role = this.teamService.getCurrentUserRole();
+    return role === 'ADMIN' || role === 'SUPER_ADMIN';
+  }
+
+  loadAdminStatistics(): void {
+    // Mock admin statistics for demonstration
+    this.adminStats = {
+      totalProjects: this.allProjects.length || 5,
+      activeProjects: this.allProjects.filter(p => p.status === 'ACTIVE').length || 3,
+      completedProjects: this.allProjects.filter(p => p.status === 'COMPLETED').length || 2,
+      totalUsers: 25,
+      activeUsers: 22,
+      totalResources: this.resources.length || 15,
+      commonResources: this.commonResources.length || 8,
+      controlledResources: this.managerResources.length || 7,
+      totalAccessRequests: this.accessRequests.length || 12,
+      pendingRequests: this.pendingApprovalRequests.length || 3,
+      approvedRequests: this.accessRequests.filter(r => r.status === 'APPROVED').length || 8
+    };
+  }
+
+  navigateToUserManagement(): void {
+    this.router.navigate(['/admin/users']);
+  }
+
+  navigateToProjectManagement(): void {
+    this.router.navigate(['/admin/projects']);
   }
   
   canRequestAccess(resource: TeamResource): boolean {
@@ -1409,21 +1455,40 @@ export class Teamdetails implements OnInit {
   }
   
   revokeUserAccess(userId: number): void {
-    if (!this.selectedResource || !confirm('Are you sure you want to revoke access for this user?')) {
-      return;
-    }
+    if (!this.selectedResource) return;
     
-    this.teamService.revokeUserAccess(userId, this.selectedResource.id).subscribe({
+    const user = this.resourceAccess.find(access => access.userId === userId);
+    this.selectedUserForRevoke = {
+      userId: userId,
+      resourceId: this.selectedResource.id,
+      username: user?.username || 'Unknown User'
+    };
+    this.showRevokeAccessModal = true;
+  }
+  
+  confirmRevokeAccess(): void {
+    if (!this.selectedUserForRevoke) return;
+    
+    this.teamService.revokeUserAccess(this.selectedUserForRevoke.userId, this.selectedUserForRevoke.resourceId).subscribe({
       next: () => {
-        this.toastService.success('Success', 'User access revoked successfully!');
-        this.loadResourceAccess(this.selectedResource!.id);
+        // Remove user from local resourceAccess array
+        this.resourceAccess = this.resourceAccess.filter(access => access.userId !== this.selectedUserForRevoke!.userId);
+        
+        this.toastService.success('Success', `Access revoked for ${this.selectedUserForRevoke!.username}`);
         this.refreshRecentActivity();
+        this.loadUserUploads();
+        this.closeRevokeAccessModal();
       },
       error: (err) => {
         const errorMessage = err.error?.message || 'Failed to revoke access';
         this.toastService.error('Error', errorMessage);
       }
     });
+  }
+  
+  closeRevokeAccessModal(): void {
+    this.showRevokeAccessModal = false;
+    this.selectedUserForRevoke = null;
   }
   
   refreshRecentActivity(): void {
@@ -1434,6 +1499,7 @@ export class Teamdetails implements OnInit {
   
   onUpdateAccessSettings(): void {
     if (this.editAccessForm.invalid || !this.selectedResource) {
+      this.toastService.error('Error', 'Please fill in all required fields');
       return;
     }
     
@@ -1442,12 +1508,16 @@ export class Teamdetails implements OnInit {
       allowedUserGroups: this.selectedUserGroups.join(',')
     };
     
+    this.toastService.info('Processing', 'Updating access settings...');
+    
     this.teamService.updateResourceAccessSettings(this.selectedResource.id, accessSettings).subscribe({
       next: (updatedResource) => {
-        this.toastService.success('Success', 'Access settings updated successfully!');
+        const groupsText = this.selectedUserGroups.length > 0 ? ` Groups: ${this.selectedUserGroups.join(', ')}` : '';
+        this.toastService.success('Success', `Access settings updated!${groupsText}`);
         this.closeEditAccessModal();
         this.loadUserUploads();
         this.loadResources();
+        this.loadResourceAccess(this.selectedResource!.id);
       },
       error: (err) => {
         const errorMessage = err.error?.message || 'Failed to update access settings';
@@ -1560,11 +1630,14 @@ export class Teamdetails implements OnInit {
   }
   
   logout(): void {
-    this.toastService.success('Success', 'Logged out successfully. Goodbye!');
+    this.toastService.info('Processing', 'Logging out...');
     setTimeout(() => {
       this.teamService.logout();
-      this.router.navigate(['/login']);
-    }, 1000);
+      this.toastService.success('Success', 'Logged out successfully. Goodbye!');
+      setTimeout(() => {
+        this.router.navigate(['/login']);
+      }, 500);
+    }, 500);
   }
   
   updateTeamStatus(teamId: number, event: any): void {
@@ -1636,6 +1709,10 @@ export class Teamdetails implements OnInit {
   // Remove User Modal
   showRemoveUserModal = false;
   selectedUserToRemove: { id: number, username: string } | null = null;
+  
+  // Revoke Access Modal
+  showRevokeAccessModal = false;
+  selectedUserForRevoke: { userId: number, resourceId: number, username: string } | null = null;
   
   // Add User to Project Modal
   showAddUserToProjectModal = false;
@@ -1745,30 +1822,54 @@ export class Teamdetails implements OnInit {
   
   filterMembers(): void {
     this.showEmployeeDropdown = true;
-    let employees = [...this.allEmployees];
+    this.isSearchingEmployees = true;
     
-    // Apply role filter
-    if (this.memberRoleFilter) {
-      employees = employees.filter(emp => emp.role === this.memberRoleFilter);
-    }
-    
-    // Apply search filter
     if (this.memberSearchTerm.trim()) {
-      const searchTerm = this.memberSearchTerm.toLowerCase();
-      employees = employees.filter(employee => 
-        employee.username.toLowerCase().includes(searchTerm) ||
-        employee.email.toLowerCase().includes(searchTerm) ||
-        employee.role.toLowerCase().includes(searchTerm)
+      // Use API search for real-time results
+      this.teamService.searchUsers(this.memberSearchTerm.trim()).subscribe({
+        next: (searchResults) => {
+          console.log('Search API results:', searchResults);
+          let employees = searchResults || [];
+          
+          // Apply role filter
+          if (this.memberRoleFilter) {
+            employees = employees.filter(emp => emp.role === this.memberRoleFilter);
+          }
+          
+          // Exclude already selected employees and selected manager
+          this.filteredEmployees = employees.filter(employee => 
+            !this.isEmployeeSelected(employee.id) && 
+            employee.id !== this.selectedManager?.id
+          );
+          
+          this.searchNoResults = this.filteredEmployees.length === 0;
+          this.isSearchingEmployees = false;
+        },
+        error: (err) => {
+          console.error('Search API error:', err);
+          this.filteredEmployees = [];
+          this.searchNoResults = true;
+          this.isSearchingEmployees = false;
+        }
+      });
+    } else {
+      // Use cached employees for empty search
+      let employees = [...this.allEmployees];
+      
+      // Apply role filter
+      if (this.memberRoleFilter) {
+        employees = employees.filter(emp => emp.role === this.memberRoleFilter);
+      }
+      
+      // Exclude already selected employees and selected manager
+      this.filteredEmployees = employees.filter(employee => 
+        !this.isEmployeeSelected(employee.id) && 
+        employee.id !== this.selectedManager?.id
       );
+      
+      this.searchNoResults = this.filteredEmployees.length === 0;
+      this.isSearchingEmployees = false;
     }
-    
-    // Exclude already selected employees and selected manager
-    this.filteredEmployees = employees.filter(employee => 
-      !this.isEmployeeSelected(employee.id) && 
-      employee.id !== this.selectedManager?.id
-    );
-    
-    this.searchNoResults = this.filteredEmployees.length === 0;
   }
   
   isEmployeeSelected(employeeId: number): boolean {
@@ -1987,47 +2088,19 @@ export class Teamdetails implements OnInit {
   loadAvailableUsers(): void {
     const currentMemberIds = this.members.map(m => m.id);
     
-    // Complete user list from database
-    const allUsers = [
-      { id: 1, username: 'rajesh.admin', fullName: 'Rajesh Kumar', email: 'rajesh.admin@company.com', role: 'ADMIN' },
-      { id: 2, username: 'priya.manager', fullName: 'Priya Sharma', email: 'priya.manager@company.com', role: 'PROJECT_MANAGER' },
-      { id: 3, username: 'james.manager', fullName: 'James Wilson', email: 'james.manager@company.com', role: 'PROJECT_MANAGER' },
-      { id: 4, username: 'sarah.manager', fullName: 'Sarah Johnson', email: 'sarah.manager@company.com', role: 'PROJECT_MANAGER' },
-      { id: 5, username: 'mike.manager', fullName: 'Mike Davis', email: 'mike.manager@company.com', role: 'PROJECT_MANAGER' },
-      { id: 6, username: 'anna.manager', fullName: 'Anna Brown', email: 'anna.manager@company.com', role: 'PROJECT_MANAGER' },
-      { id: 7, username: 'adhnanjeff.teamlead', fullName: 'Adhnan Jeff', email: 'adhnanjeff.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 8, username: 'swetha.teamlead', fullName: 'Swetha', email: 'swetha.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 9, username: 'hari.teamlead', fullName: 'Hari', email: 'hari.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 10, username: 'sounder.teamlead', fullName: 'Sounder', email: 'sounder.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 11, username: 'tharanika.teamlead', fullName: 'Tharanika', email: 'tharanika.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 12, username: 'pradeep.teamlead', fullName: 'Pradeep', email: 'pradeep.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 13, username: 'adrin.teamlead', fullName: 'Adrin', email: 'adrin.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 14, username: 'lokesh.teamlead', fullName: 'Lokesh', email: 'lokesh.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 15, username: 'tom.teamlead', fullName: 'Tom Johnson', email: 'tom.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 16, username: 'jane.teamlead', fullName: 'Jane Miller', email: 'jane.teamlead@company.com', role: 'TEAMLEAD' },
-      { id: 17, username: 'arjun.dev', fullName: 'Arjun Singh', email: 'arjun.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 18, username: 'emily.dev', fullName: 'Emily Chen', email: 'emily.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 19, username: 'vikram.dev', fullName: 'Vikram Gupta', email: 'vikram.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 20, username: 'michael.dev', fullName: 'Michael Brown', email: 'michael.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 21, username: 'jennifer.dev', fullName: 'Jennifer Davis', email: 'jennifer.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 22, username: 'robert.dev', fullName: 'Robert Miller', email: 'robert.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 23, username: 'peter.dev', fullName: 'Peter Lee', email: 'peter.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 24, username: 'amy.dev', fullName: 'Amy Taylor', email: 'amy.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 25, username: 'chris.dev', fullName: 'Chris Anderson', email: 'chris.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 26, username: 'lisa.dev', fullName: 'Lisa Garcia', email: 'lisa.dev@company.com', role: 'TEAM_MEMBER' },
-      { id: 27, username: 'sophia.test', fullName: 'Sophia Martinez', email: 'sophia.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 28, username: 'ravi.test', fullName: 'Ravi Mehta', email: 'ravi.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 29, username: 'amanda.test', fullName: 'Amanda Wilson', email: 'amanda.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 30, username: 'kevin.test', fullName: 'Kevin Lee', email: 'kevin.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 31, username: 'nancy.test', fullName: 'Nancy White', email: 'nancy.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 32, username: 'mark.test', fullName: 'Mark Thompson', email: 'mark.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 33, username: 'helen.test', fullName: 'Helen Clark', email: 'helen.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 34, username: 'paul.test', fullName: 'Paul Rodriguez', email: 'paul.test@company.com', role: 'TEAM_MEMBER' },
-      { id: 35, username: 'jane.tester', fullName: 'Jane Tester', email: 'jane.tester@company.com', role: 'TEAM_MEMBER' }
-    ];
-    
-    this.availableUsers = allUsers.filter(user => !currentMemberIds.includes(user.id));
-    this.filteredUsers = [...this.availableUsers];
+    this.teamService.getAllEmployees().subscribe({
+      next: (allUsers) => {
+        console.log('Fresh user data from API:', allUsers);
+        this.availableUsers = (allUsers || []).filter(user => !currentMemberIds.includes(user.id));
+        this.filteredUsers = [...this.availableUsers];
+        console.log('Available users for selection:', this.availableUsers);
+      },
+      error: (err) => {
+        console.error('Error loading users from API:', err);
+        this.availableUsers = [];
+        this.filteredUsers = [];
+      }
+    });
   }
   
   onSearchUsers(): void {
@@ -2036,12 +2109,19 @@ export class Teamdetails implements OnInit {
       return;
     }
     
-    const term = this.searchTerm.toLowerCase();
-    this.filteredUsers = this.availableUsers.filter(user => 
-      user.username.toLowerCase().includes(term) ||
-      user.fullName.toLowerCase().includes(term) ||
-      user.email.toLowerCase().includes(term)
-    );
+    console.log('Searching for:', this.searchTerm);
+    this.teamService.searchUsers(this.searchTerm.trim()).subscribe({
+      next: (searchResults) => {
+        console.log('Search results from API:', searchResults);
+        const currentMemberIds = this.members.map(m => m.id);
+        this.filteredUsers = (searchResults || []).filter(user => !currentMemberIds.includes(user.id));
+        console.log('Filtered search results:', this.filteredUsers);
+      },
+      error: (err) => {
+        console.error('Search error:', err);
+        this.filteredUsers = [];
+      }
+    });
   }
   
   selectUser(user: any): void {
@@ -2050,13 +2130,17 @@ export class Teamdetails implements OnInit {
   }
   
   addUserToProject(): void {
-    if (!this.selectedUser) return;
+    if (!this.selectedUser) {
+      this.toastService.error('Error', 'Please select a user to add');
+      return;
+    }
+    
+    this.toastService.info('Processing', `Adding ${this.selectedUser.fullName} to project...`);
     
     this.teamService.addUserToProject(this.selectedUser.id, this.teamId).subscribe({
       next: () => {
-        this.toastService.success('Success', `${this.selectedUser.fullName} added successfully!`);
+        this.toastService.success('Success', `${this.selectedUser.fullName} added to project successfully!`);
         
-        // Add to local members list
         const newMember = {
           id: this.selectedUser.id,
           username: this.selectedUser.username,
@@ -2075,7 +2159,8 @@ export class Teamdetails implements OnInit {
         this.closeAddUserToProjectModal();
       },
       error: (err) => {
-        this.toastService.error('Error', 'Failed to add user to project');
+        const errorMessage = err.error?.message || 'Failed to add user to project';
+        this.toastService.error('Error', errorMessage);
       }
     });
   }
@@ -2286,19 +2371,25 @@ export class Teamdetails implements OnInit {
   }
   
   confirmRemoveUser(): void {
-    if (this.selectedUserToRemove) {
-      const username = this.selectedUserToRemove.username;
-      this.teamService.removeUserFromProject(this.teamId, this.selectedUserToRemove.id).subscribe({
-        next: () => {
-          this.toastService.success('Success', `${username} has been removed from the team`);
-          this.loadTeamData();
-          this.closeRemoveUserModal();
-        },
-        error: (err: any) => {
-          this.toastService.error('Error', 'Failed to remove user from team');
-        }
-      });
+    if (!this.selectedUserToRemove) {
+      this.toastService.error('Error', 'No user selected for removal');
+      return;
     }
+    
+    const username = this.selectedUserToRemove.username;
+    this.toastService.info('Processing', `Removing ${username} from team...`);
+    
+    this.teamService.removeUserFromProject(this.teamId, this.selectedUserToRemove.id).subscribe({
+      next: () => {
+        this.toastService.success('Success', `${username} removed from team successfully`);
+        this.loadTeamData();
+        this.closeRemoveUserModal();
+      },
+      error: (err: any) => {
+        const errorMessage = err.error?.message || 'Failed to remove user from team';
+        this.toastService.error('Error', errorMessage);
+      }
+    });
   }
   
   closeRemoveUserModal(): void {

@@ -220,9 +220,23 @@ public class PermissionController {
     }
     
     @DeleteMapping("/user/{userId}/resource/{resourceId}")
-    @PreAuthorize("hasRole('PROJECT_MANAGER') or hasRole('ADMIN')")
     public ResponseEntity<Void> revokeUserResourceAccess(@PathVariable Long userId, @PathVariable Long resourceId) {
-        permissionService.revokeUserResourceAccess(userId, resourceId);
-        return ResponseEntity.ok().build();
+        System.out.println("\n🚀 REVOKE ACCESS REQUEST RECEIVED");
+        System.out.println("Endpoint: DELETE /api/permissions/user/" + userId + "/resource/" + resourceId);
+        
+        try {
+            if (userId == null || resourceId == null) {
+                System.out.println("❌ Invalid input parameters");
+                return ResponseEntity.badRequest().build();
+            }
+            
+            permissionService.revokeUserResourceAccess(userId, resourceId);
+            System.out.println("✅ CONTROLLER: Revoke access completed successfully");
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            System.out.println("❌ CONTROLLER: Revoke access failed - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

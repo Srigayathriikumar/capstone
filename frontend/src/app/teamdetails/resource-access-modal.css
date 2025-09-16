@@ -36,9 +36,9 @@
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #1976d2, #1565c0);
+  background: #1976d2;
   color: white;
-  padding: 24px 32px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -47,17 +47,15 @@
 
 .modal-header h3 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
+  color: white;
 }
 
-.modal-header h3::before {
-  content: '👥';
-  font-size: 24px;
-}
+
 
 .close-btn {
   background: rgba(255, 255, 255, 0.2);
@@ -115,12 +113,7 @@
   background: linear-gradient(135deg, #10b981, #059669);
 }
 
-.access-item:hover {
-  background: #f1f5f9;
-  border-color: #1976d2;
-  transform: translateX(2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
+
 
 .user-info {
   display: flex;
@@ -204,7 +197,7 @@
 }
 
 .revoke-btn {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: #1976d2;
   color: white;
   border: none;
   padding: 4px 8px;
@@ -212,17 +205,10 @@
   cursor: pointer;
   font-size: 10px;
   font-weight: 500;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 2px;
   white-space: nowrap;
-}
-
-.revoke-btn:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .empty-state {
@@ -232,7 +218,7 @@
 }
 
 .empty-state::before {
-  content: '👤';
+  content: '';
   font-size: 48px;
   display: block;
   margin-bottom: 16px;
@@ -253,7 +239,7 @@
 }
 
 .loading::before {
-  content: '⏳';
+  content: '';
   font-size: 32px;
   display: block;
   margin-bottom: 12px;

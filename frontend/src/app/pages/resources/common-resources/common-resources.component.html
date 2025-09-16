@@ -17,18 +17,69 @@
       </div>
     </div>
     <div class="navbar-right">
-      <button class="nav-btn" title="User Details">
-        <i class="pi pi-user"></i>
-        <span>{{ currentUsername }}</span>
+      <button class="nav-btn" (click)="openSharedDocuments()" title="Shared Documents">
+        <i class="pi pi-share-alt"></i>
+        <span>Shared Documents</span>
       </button>
+      
       <div class="notification-container">
-        <button class="nav-btn" title="Notifications">
+        <button class="nav-btn" (click)="toggleNotifications()" title="Notifications">
           <i class="pi pi-bell"></i>
+          <span class="notification-badge" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
         </button>
+        
+        <div class="notification-dropdown" *ngIf="showNotifications">
+          <div class="notification-header">
+            <h4>Notifications</h4>
+            <button class="close-notifications" (click)="showNotifications = false">×</button>
+          </div>
+          <div class="notification-list">
+            <div class="notification-item" *ngFor="let notification of notifications.slice(0, 5)" 
+                 [class.unread]="!notification.isRead"
+                 (click)="markNotificationAsRead(notification.id)">
+              <div class="notification-content">
+                <h5>{{ notification.title }}</h5>
+                <p>{{ notification.message }}</p>
+                <span class="notification-time">{{ notification.createdAt | date:'short' }}</span>
+              </div>
+            </div>
+            <div class="no-notifications" *ngIf="notifications.length === 0">
+              <p>No notifications</p>
+            </div>
+          </div>
+        </div>
       </div>
-      <button class="nav-btn logout" (click)="logout()" title="Logout">
-        <i class="pi pi-sign-out"></i>
-      </button>
+      
+      <div class="user-profile-container">
+        <button class="nav-btn user-profile-btn" (click)="toggleUserDropdown()" title="User Profile">
+          <i class="pi pi-user"></i>
+          <span>{{ currentUsername }}</span>
+        </button>
+        
+        <div class="user-dropdown" *ngIf="showUserDropdown">
+          <div class="user-dropdown-header">
+            <div class="user-avatar-dropdown">
+              {{ currentUsername.charAt(0).toUpperCase() }}
+            </div>
+            <div class="user-info-dropdown">
+              <h4>{{ currentUsername }}</h4>
+              <p>{{ getCurrentUserEmail() }}</p>
+              <span class="user-role-badge">{{ getCurrentUserRole() }}</span>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-menu-items">
+            <button class="dropdown-item" (click)="openProfileSettings()">
+              <i class="pi pi-cog"></i>
+              <span>Profile Settings</span>
+            </button>
+            <button class="dropdown-item logout-item" (click)="logout()">
+              <i class="pi pi-sign-out"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </nav>
   
@@ -185,15 +236,11 @@
           <i class="pi pi-eye"></i> View
         </button>
         <button class="btn btn-sm btn-secondary" 
-                *ngIf="canViewFile(resource)" 
+                *ngIf="resource.filePath || resource.fileData" 
                 (click)="downloadFile(resource)">
           <i class="pi pi-download"></i> Download
         </button>
-        <button class="btn btn-sm btn-info" 
-                *ngIf="isManagerOrAdmin()" 
-                (click)="showResourceAccess(resource)">
-          <i class="pi pi-users"></i> Access
-        </button>
+
       </div>
     </div>
   </div>

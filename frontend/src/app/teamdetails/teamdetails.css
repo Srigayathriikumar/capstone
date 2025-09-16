@@ -2379,33 +2379,50 @@ div.overview-card {
 /* User Groups Section */
 .user-groups-section {
   margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #e8f5e8 0%, #f0fff4 100%);
+  border-radius: 8px;
+  border: 2px solid #a5d6a7;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
 }
 
 .user-groups-section h4 {
-  margin: 0 0 0.75rem 0;
-  color: #495057;
-  font-size: 0.9rem;
-  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: #2e7d32;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.groups-description {
+  margin: 0 0 1rem 0;
+  color: #388e3c;
+  font-size: 0.875rem;
+  font-style: italic;
 }
 
 .group-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .group-badge {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  border: 1px solid #bbdefb;
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .users-section h4 {
@@ -2490,22 +2507,133 @@ div.overview-card {
   border: 1px solid #f5c6cb;
 }
 
-/* Access actions styling */
-.access-actions {
+/* Access Table Styles */
+.access-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.access-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.access-table thead {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.access-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.access-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f3f4;
+  vertical-align: middle;
+}
+
+.access-row {
+  transition: background-color 0.2s ease;
+}
+
+.access-row:hover {
+  background: #f8f9fa;
+}
+
+.user-cell {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 10px;
+}
+
+.user-cell .user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1976d2, #1565c0);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.user-cell .username {
+  font-weight: 500;
+  color: #2c3e50;
+  font-size: 13px;
+}
+
+.access-level-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.access-level-badge.admin {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.access-level-badge.read {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.access-level-badge.write {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.granted {
+  background: #dcfce7;
+  color: #166534;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .revoke-btn {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
+  gap: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.revoke-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
 }
 
 .revoke-btn i {
-  font-size: 0.7rem;
+  font-size: 10px;
+}
+
+/* Access actions styling */
+.access-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* User overview specific layout - 3 rows */
@@ -3331,8 +3459,30 @@ div.overview-card {
 .modal-content {
   max-width: 700px;
   width: 90vw;
+  max-height: 85vh;
   border-radius: 20px;
-  overflow: hidden;
+  overflow-y: scroll !important;
+  overflow-x: hidden;
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 /* Status badge in modal */
@@ -3431,24 +3581,26 @@ div.overview-card {
 }
 
 .modal-content {
-  max-width: 650px;
-  width: 95vw;
-  max-height: 90vh;
+  max-width: 900px;
+  min-width: 800px;
+  width: 85vw;
+  max-height: 85vh;
   overflow-y: auto;
+  overflow-x: hidden;
   background: white;
-  border-radius: 24px !important;
+  border-radius: 12px !important;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
   border: none;
-  padding: 32px;
+  padding: 20px;
   position: relative;
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: #1976d2;
   color: white;
-  padding: 24px 32px;
-  border-radius: 20px 20px 0 0;
-  margin: -32px -32px 32px -32px;
+  padding: 12px 20px;
+  border-radius: 8px 8px 0 0;
+  margin: -20px -20px 20px -20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3456,11 +3608,12 @@ div.overview-card {
 
 .modal-header h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
+  color: white;
 }
 
 .close-btn {
@@ -4073,11 +4226,9 @@ textarea.form-control {
 select.form-control {
   cursor: pointer;
   background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%236b7280" d="M7 10l5 5 5-5z"/></svg>');
+  background-image: none;
   background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 20px;
-  padding-right: 48px;
+  padding-right: 16px;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -4095,14 +4246,14 @@ select.form-control {
 select.form-control:hover {
   border-color: #cbd5e1;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23374151" d="M7 10l5 5 5-5z"/></svg>');
+  background-image: none;
 }
 
 select.form-control:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(0, 0, 0, 0.08);
   background: white;
-  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%233b82f6" d="M7 10l5 5 5-5z"/></svg>');
+  background-image: none;
   outline: none;
 }
 
@@ -6792,12 +6943,13 @@ select.form-control option:selected {
 .modal-content .dropdown-arrow:hover {
   transform: none !important;
 }
-/* Remove dropdown arrow from Document Type select */
-.modal-content select#docType {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: none;
+/* Remove dropdown arrow from all select elements in modals */
+.modal-content select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: none !important;
+  padding-right: 16px !important;
 }
 /* Make Document Type dropdown show more options */
 .modal-content select#docType {

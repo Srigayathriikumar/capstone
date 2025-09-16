@@ -169,7 +169,10 @@ export class TeamService {
     const token = this.authService.getToken();
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     });
   }
 
@@ -379,11 +382,13 @@ export class TeamService {
   }
   
   getAllEmployees(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/users`, { headers: this.getHeaders() });
+    const timestamp = new Date().getTime();
+    return this.http.get<any[]>(`${this.apiUrl}/users/employees?_t=${timestamp}`, { headers: this.getHeaders() });
   }
   
   searchUsers(query: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/users/search?query=${encodeURIComponent(query)}`, { headers: this.getHeaders() });
+    const timestamp = new Date().getTime();
+    return this.http.get<any[]>(`${this.apiUrl}/users/search?query=${encodeURIComponent(query)}&_t=${timestamp}`, { headers: this.getHeaders() });
   }
   
   getProjectsByManager(managerId: number): Observable<any[]> {

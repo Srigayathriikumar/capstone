@@ -388,10 +388,29 @@ public class PermissionServiceImpl implements PermissionService {
     
     @Override
     public void revokeUserResourceAccess(Long userId, Long resourceId) {
-        Optional<Permission> permission = permissionRepository.findByUserIdAndResourceId(userId, resourceId);
-        if (permission.isPresent()) {
-            permission.get().setIsActive(false);
-            permissionRepository.save(permission.get());
+        System.out.println("\n🔄 SERVICE: REVOKING USER ACCESS");
+        System.out.println("User ID: " + userId);
+        System.out.println("Resource ID: " + resourceId);
+        
+        try {
+            Optional<Permission> permission = permissionRepository.findByUserIdAndResourceId(userId, resourceId);
+            if (permission.isPresent()) {
+                System.out.println("✅ Permission found - ID: " + permission.get().getId());
+                System.out.println("Current status: " + (permission.get().getIsActive() ? "ACTIVE" : "INACTIVE"));
+                
+                permission.get().setIsActive(false);
+                Permission saved = permissionRepository.save(permission.get());
+                
+                System.out.println("✅ Permission revoked successfully");
+                System.out.println("New status: " + (saved.getIsActive() ? "ACTIVE" : "INACTIVE"));
+            } else {
+                System.out.println("⚠️ No permission found for user " + userId + " and resource " + resourceId);
+                throw new RuntimeException("Permission not found for user " + userId + " and resource " + resourceId);
+            }
+        } catch (Exception e) {
+            System.out.println("❌ SERVICE: Error revoking access - " + e.getMessage());
+            throw e;
         }
+        System.out.println("=========================\n");
     }
 }
