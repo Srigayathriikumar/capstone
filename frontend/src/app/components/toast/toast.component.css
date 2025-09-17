@@ -33,6 +33,29 @@
 
 .toast-success {
   border-left-color: #10b981;
+  background: #10b981;
+  color: white;
+}
+
+.toast-success .toast-title {
+  color: white;
+}
+
+.toast-success .toast-message {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.toast-success .toast-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.toast-success .toast-close {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.toast-success .toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .toast-error {

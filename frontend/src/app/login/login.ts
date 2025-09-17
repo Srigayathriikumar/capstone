@@ -41,25 +41,34 @@ export class Login {
         next: (success) => {
           if (success) {
             this.loadingService.show();
-            this.teamService.getTeams().subscribe({
-              next: (teams) => {
-                if (teams && teams.length > 0) {
-                  setTimeout(() => {
+            const userRole = this.teamService.getCurrentUserRole();
+            
+            if (userRole === 'SUPER_ADMIN') {
+              setTimeout(() => {
+                this.loadingService.hide();
+                this.router.navigate(['/superadmin']);
+              }, 2000);
+            } else {
+              this.teamService.getTeams().subscribe({
+                next: (teams) => {
+                  if (teams && teams.length > 0) {
+                    setTimeout(() => {
+                      this.loadingService.hide();
+                      this.router.navigate(['/team', teams[0].id]);
+                    }, 2000);
+                  } else {
                     this.loadingService.hide();
-                    this.router.navigate(['/team', teams[0].id]);
-                  }, 2000);
-                } else {
+                    this.error = 'No teams available';
+                    this.loading = false;
+                  }
+                },
+                error: () => {
                   this.loadingService.hide();
-                  this.error = 'No teams available';
+                  this.error = 'Failed to load teams';
                   this.loading = false;
                 }
-              },
-              error: () => {
-                this.loadingService.hide();
-                this.error = 'Failed to load teams';
-                this.loading = false;
-              }
-            });
+              });
+            }
           } else {
             this.error = 'Invalid credentials';
             this.loading = false;

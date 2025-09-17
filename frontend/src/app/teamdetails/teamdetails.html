@@ -280,7 +280,7 @@
       <!-- Regular Overview for Managers/Users -->
       <div class="overview-grid" [class.manager-grid]="isManagerOrAdmin() && !isAdmin()" [class.user-grid]="!isManagerOrAdmin()" *ngIf="!isAdmin()">
         <!-- Manager View: Project Status Management -->
-        <div class="overview-card status-card" *ngIf="isManagerOrAdmin()">
+        <div class="overview-card status-card" *ngIf="isManagerOrAdminOnly()">
           <h3><i class="pi pi-cog"></i> Project Status</h3>
           <div class="status-management">
             <div class="current-status">
@@ -321,6 +321,50 @@
           <div class="status-info">
             <p><i class="pi pi-info-circle"></i> Last updated: {{ team?.updatedAt | date:'short' || 'Never' }}</p>
             <p><i class="pi pi-user"></i> Updated by: {{ currentUsername }}</p>
+          </div>
+        </div>
+        
+        <!-- Team Lead View: Project Milestones & Completion -->
+        <div class="overview-card milestones-card" *ngIf="isTeamLead()">
+          <h3><i class="pi pi-flag"></i> Project Milestones</h3>
+          <div class="overall-progress">
+            <div class="progress-header">
+              <span class="progress-label">Overall Progress</span>
+              <span class="progress-percentage">68%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: 68%"></div>
+            </div>
+          </div>
+          <div class="milestones-list">
+            <div class="milestone-item completed">
+              <div class="milestone-status"><i class="pi pi-check-circle"></i></div>
+              <div class="milestone-info">
+                <span class="milestone-name">Requirements Analysis</span>
+                <span class="milestone-date">Completed Dec 15</span>
+              </div>
+            </div>
+            <div class="milestone-item completed">
+              <div class="milestone-status"><i class="pi pi-check-circle"></i></div>
+              <div class="milestone-info">
+                <span class="milestone-name">System Design</span>
+                <span class="milestone-date">Completed Jan 10</span>
+              </div>
+            </div>
+            <div class="milestone-item active">
+              <div class="milestone-status"><i class="pi pi-clock"></i></div>
+              <div class="milestone-info">
+                <span class="milestone-name">Development Phase</span>
+                <span class="milestone-date">Due Feb 28</span>
+              </div>
+            </div>
+            <div class="milestone-item pending">
+              <div class="milestone-status"><i class="pi pi-circle"></i></div>
+              <div class="milestone-info">
+                <span class="milestone-name">Testing & QA</span>
+                <span class="milestone-date">Due Mar 15</span>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -760,8 +804,11 @@
               <button class="btn btn-sm btn-info view-access-btn" (click)="showResourceAccess(resource)" title="View Access">
                 <i class="pi pi-users"></i> Access
               </button>
-              <button class="btn btn-sm btn-warning edit-access-btn" (click)="openEditAccessModal(resource)" title="Edit Access Settings">
+              <button class="btn btn-sm btn-primary edit-access-btn" (click)="openEditAccessModal(resource)" title="Edit Access Settings">
                 <i class="pi pi-cog"></i> Edit Access
+              </button>
+              <button class="btn btn-sm btn-primary delete-resource-btn" (click)="openDeleteResourceModal(resource)" title="Delete Resource">
+                <i class="pi pi-trash"></i> Delete
               </button>
             </div>
           </div>
@@ -1383,7 +1430,7 @@
         <div class="access-info" *ngIf="!loadingResourceAccess">
           
           <!-- Always show user groups section for controlled resources -->
-          <div class="user-groups-section">
+          <!-- <div class="user-groups-section">
             <h4><i class="pi pi-users"></i> Allowed User Groups</h4>
             <div class="group-badges" *ngIf="selectedResource?.allowedUserGroups && selectedResource.allowedUserGroups.trim(); else noGroups">
               <span class="group-badge" *ngFor="let group of getGroupsArray(selectedResource.allowedUserGroups)">
@@ -1404,7 +1451,7 @@
               </div>
             </ng-template>
             <p class="groups-description">Users from these groups have automatic access to this resource.</p>
-          </div>
+          </div> -->
           
           <div class="users-section">
             <h4 *ngIf="selectedResource?.allowedUserGroups">Individual Access</h4>
@@ -2091,5 +2138,47 @@
         <button class="btn btn-secondary" (click)="closeRevokeAccessModal()">Cancel</button>
         <button class="btn btn-danger" (click)="confirmRevokeAccess()">Revoke Access</button>
       </div>
+    </div>
+  </div>
+  <!-- Delete Resource Modal -->
+  <div class="modal-overlay" *ngIf="showDeleteResourceModal" (click)="closeDeleteResourceModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="pi pi-exclamation-triangle"></i> Delete Resource</h3>
+        <button class="close-btn" (click)="closeDeleteResourceModal()">×</button>
+      </div>
+      
+      <form [formGroup]="deleteResourceForm" (ngSubmit)="confirmDeleteResource()">
+        <div class="resource-info" *ngIf="selectedResourceToDelete">
+          <p><strong>Resource:</strong> {{ selectedResourceToDelete.name }}</p>
+          <p><strong>Type:</strong> {{ selectedResourceToDelete.type }}</p>
+          <p><strong>Description:</strong> {{ selectedResourceToDelete.description }}</p>
+        </div>
+        
+        <div class="warning-message">
+          <i class="pi pi-exclamation-triangle warning-icon"></i>
+          <div class="warning-text">
+            <h4>Are you sure you want to delete this resource?</h4>
+            <p>This action cannot be undone. The resource will be permanently removed from the system.</p>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="deletionReason">Reason for Deletion</label>
+          <textarea id="deletionReason" 
+                    formControlName="deletionReason" 
+                    class="form-control" 
+                    rows="4" 
+                    placeholder="Please provide a reason for deleting this resource (minimum 10 characters)"></textarea>
+          <div class="form-help">Explain why you are deleting this resource.</div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="closeDeleteResourceModal()">Cancel</button>
+          <button type="submit" class="btn btn-danger" [disabled]="deleteResourceForm.invalid">
+            <i class="pi pi-trash"></i> Delete Resource
+          </button>
+        </div>
+      </form>
     </div>
   </div>

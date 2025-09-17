@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TeamService, TeamResource, CreateResourceRequest } from '../../../services/team.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-manager-resources',
@@ -51,7 +52,8 @@ export class ManagerResourcesComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private teamService: TeamService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     this.addResourceForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -215,12 +217,12 @@ export class ManagerResourcesComponent implements OnInit {
     }
     
     if (this.uploadMode === 'file' && !this.selectedFile) {
-      alert('Please select a file to upload');
+      this.toastService.error('Error', 'Please select a file to upload');
       return;
     }
     
     if (this.uploadMode === 'url' && !this.addResourceForm.get('resourceUrl')?.value) {
-      alert('Please enter a resource URL');
+      this.toastService.error('Error', 'Please enter a resource URL');
       return;
     }
     
@@ -251,48 +253,16 @@ export class ManagerResourcesComponent implements OnInit {
         submitBtn.textContent = 'Uploading...';
       }
       
+      this.toastService.info('Processing', 'Adding resource...');
+      
       this.teamService.createResourceWithFile(this.selectedFile, resourceData).subscribe({
         next: (response) => {
-          console.log('Resource created successfully:', response);
-          alert('Resource created successfully!');
+          this.toastService.success('Success', `Resource "${resourceData.name}" uploaded successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
         },
         error: (err) => {
-          console.error('Error creating resource with file:', {
-            status: err.status,
-            statusText: err.statusText,
-            error: err.error,
-            message: err.message,
-            url: err.url,
-            headers: err.headers,
-            fileInfo: {
-              name: this.selectedFile?.name,
-              size: this.selectedFile?.size,
-              type: this.selectedFile?.type
-            },
-            resourceData: resourceData
-          });
-          
-          let errorMessage = 'Failed to create resource';
-          
-          if (err.status === 413) {
-            errorMessage = 'File too large. Please select a smaller file.';
-          } else if (err.status === 415) {
-            errorMessage = 'Unsupported file type.';
-          } else if (err.status === 500) {
-            errorMessage = `Server error during file upload. Backend error: ${err.error?.message || 'Unknown server error'}. Please check the server logs.`;
-          } else if (err.status === 403) {
-            errorMessage = 'Session expired or access denied. Please refresh the page and login again.';
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 3000);
-          } else if (err.error?.message) {
-            errorMessage = `Error: ${err.error.message}`;
-          }
-          
-          alert(errorMessage);
-          console.log('Full error object:', err);
+          this.toastService.error('Error', 'Failed to upload resource. Please try again.');
         },
         complete: () => {
           // Reset button state
@@ -303,16 +273,16 @@ export class ManagerResourcesComponent implements OnInit {
         }
       });
     } else {
+      this.toastService.info('Processing', 'Adding resource...');
+      
       this.teamService.createResource(resourceData).subscribe({
         next: (response) => {
-          console.log('Resource created successfully:', response);
-          alert('Resource created successfully!');
+          this.toastService.success('Success', `Resource "${resourceData.name}" added successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
         },
         error: (err) => {
-          console.error('Error creating resource:', err);
-          alert('Failed to create resource: ' + (err.error?.message || err.message));
+          this.toastService.error('Error', 'Failed to add resource. Please try again.');
         }
       });
     }
@@ -324,7 +294,7 @@ export class ManagerResourcesComponent implements OnInit {
       // Check file size (limit to 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (file.size > maxSize) {
-        alert('File size too large. Please select a file smaller than 10MB.');
+        this.toastService.error('Error', 'File size too large. Please select a file smaller than 10MB.');
         event.target.value = '';
         this.selectedFile = null;
         return;
@@ -554,13 +524,13 @@ export class ManagerResourcesComponent implements OnInit {
       this.teamId
     ).subscribe({
       next: () => {
-        alert('Access request submitted successfully!');
+        this.toastService.success('Success', 'Access request submitted successfully!');
         this.closeRequestAccessModal();
         this.loadUserAccessRequests();
       },
       error: (err) => {
         console.error('Error submitting request:', err);
-        alert('Failed to submit access request');
+        this.toastService.error('Error', 'Failed to submit access request. Please try again.');
       }
     });
   }
@@ -586,12 +556,12 @@ export class ManagerResourcesComponent implements OnInit {
     if (confirm('This will update all existing manager-controlled resources to allow access for dev, test, and QA users. Continue?')) {
       this.teamService.updateExistingResourcesWithUserGroups().subscribe({
         next: (response) => {
-          alert('Successfully updated existing resources with user group access!');
+          this.toastService.success('Success', 'Successfully updated existing resources with user group access!');
           this.loadResources();
         },
         error: (err) => {
           console.error('Error updating resources:', err);
-          alert('Failed to update resources: ' + (err.error?.message || err.message));
+          this.toastService.error('Error', 'Failed to update resources. Please try again.');
         }
       });
     }
@@ -604,12 +574,12 @@ export class ManagerResourcesComponent implements OnInit {
     
     this.teamService.revokeUserAccess(userId, this.selectedResource.id).subscribe({
       next: () => {
-        alert('User access revoked successfully!');
+        this.toastService.success('Success', 'User access revoked successfully!');
         this.loadResourceAccess(this.selectedResource!.id);
       },
       error: (err) => {
         const errorMessage = err.error?.message || 'Failed to revoke access';
-        alert(errorMessage);
+        this.toastService.error('Error', 'Failed to revoke access. Please try again.');
       }
     });
   }

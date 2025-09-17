@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { Login } from './login/login';
 import { Teamdetails } from './teamdetails/teamdetails';
+import { SuperAdminComponent } from './superadmin/superadmin.component';
 import { CreateProjectComponent } from './pages/create-project/create-project.component';
 import { CommonResourcesComponent } from './pages/resources/common-resources/common-resources.component';
 import { ManagerResourcesComponent } from './pages/resources/manager-resources/manager-resources.component';
@@ -10,6 +11,7 @@ import { AuthGuard } from './guards/auth.guard';
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: Login },
+  { path: 'superadmin', component: SuperAdminComponent, canActivate: [AuthGuard] },
   { path: 'create-project', component: CreateProjectComponent, canActivate: [AuthGuard] },
   { path: 'team/:id', component: Teamdetails, canActivate: [AuthGuard] },
   { path: 'team/:teamId/resources/common', component: CommonResourcesComponent, canActivate: [AuthGuard] },

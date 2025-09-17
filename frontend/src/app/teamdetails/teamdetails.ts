@@ -160,6 +160,10 @@ export class Teamdetails implements OnInit {
       shareMode: ['url']
     });
     
+    this.deleteResourceForm = this.fb.group({
+      deletionReason: ['', [Validators.required, Validators.minLength(10)]]
+    });
+    
 
   }
 
@@ -213,10 +217,6 @@ export class Teamdetails implements OnInit {
     this.currentUserId = this.teamService.getCurrentUserId();
     this.currentUsername = this.teamService.getCurrentUsername();
     this.currentUserRole = this.teamService.getCurrentUserRole();
-    
-    if (this.currentUsername) {
-      this.toastService.success('Welcome', `Welcome back, ${this.currentUsername}!`);
-    }
     
     console.log('User initialized:', {
       userId: this.currentUserId,
@@ -429,8 +429,7 @@ export class Teamdetails implements OnInit {
           this.loadUserUploads();
         },
         error: (err) => {
-          const errorMessage = err.error?.message || 'Failed to upload resource';
-          this.toastService.error('Error', errorMessage);
+          this.toastService.error('Error', 'Failed to upload resource. Please try again.');
         }
       });
     } else {
@@ -442,8 +441,7 @@ export class Teamdetails implements OnInit {
           this.loadUserUploads();
         },
         error: (err) => {
-          const errorMessage = err.error?.message || 'Failed to add resource';
-          this.toastService.error('Error', errorMessage);
+          this.toastService.error('Error', 'Failed to add resource. Please try again.');
         }
       });
     }
@@ -778,6 +776,10 @@ export class Teamdetails implements OnInit {
   
   isTeamMember(): boolean {
     return this.currentUserRole === 'TEAM_MEMBER' || this.currentUserRole === 'USER';
+  }
+  
+  isTeamLead(): boolean {
+    return this.currentUserRole === 'TEAMLEAD';
   }
 
   isSuperAdmin(): boolean {
@@ -1725,6 +1727,11 @@ export class Teamdetails implements OnInit {
   showRevokeAccessModal = false;
   selectedUserForRevoke: { userId: number, resourceId: number, username: string } | null = null;
   
+  // Delete Resource Modal
+  showDeleteResourceModal = false;
+  selectedResourceToDelete: TeamResource | null = null;
+  deleteResourceForm!: FormGroup;
+  
   private loadingService = inject(LoadingService);
   
   // Add User to Project Modal
@@ -2408,5 +2415,42 @@ export class Teamdetails implements OnInit {
   closeRemoveUserModal(): void {
     this.showRemoveUserModal = false;
     this.selectedUserToRemove = null;
+  }
+  
+  // Delete Resource Methods
+  openDeleteResourceModal(resource: TeamResource): void {
+    this.selectedResourceToDelete = resource;
+    this.showDeleteResourceModal = true;
+    this.deleteResourceForm.reset();
+  }
+  
+  closeDeleteResourceModal(): void {
+    this.showDeleteResourceModal = false;
+    this.selectedResourceToDelete = null;
+    this.deleteResourceForm.reset();
+  }
+  
+  confirmDeleteResource(): void {
+    if (this.deleteResourceForm.invalid || !this.selectedResourceToDelete) {
+      this.toastService.error('Error', 'Please provide a valid reason for deletion');
+      return;
+    }
+    
+    const deletionReason = this.deleteResourceForm.get('deletionReason')?.value;
+    const resourceName = this.selectedResourceToDelete.name;
+    
+    this.toastService.info('Processing', 'Deleting resource...');
+    
+    this.teamService.deleteResource(this.selectedResourceToDelete.id, deletionReason).subscribe({
+      next: () => {
+        this.toastService.success('Success', `Resource "${resourceName}" deleted successfully`);
+        this.closeDeleteResourceModal();
+        this.loadUserUploads();
+        this.loadResources();
+      },
+      error: (err: any) => {
+        this.toastService.error('Error', 'Failed to delete resource. Please try again.');
+      }
+    });
   }
 }

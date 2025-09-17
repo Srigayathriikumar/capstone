@@ -1,0 +1,814 @@
+<div class="superadmin-container" *ngIf="!loading">
+  
+  <!-- Navigation Bar -->
+  <nav class="top-navbar">
+    <div class="navbar-left">
+      <button class="sidebar-toggle" (click)="toggleSidebar()">
+        <i class="pi pi-bars"></i>
+      </button>
+      <img src="logo.png" alt="TRAM Logo" class="navbar-logo">
+      <span class="navbar-title">TRAM Super Admin</span>
+    </div>
+    <div class="navbar-right">
+      <div class="notification-container">
+        <button class="nav-btn" (click)="toggleNotifications()" title="Notifications">
+          <i class="pi pi-bell"></i>
+          <span class="notification-badge" *ngIf="unreadNotificationCount > 0">{{ unreadNotificationCount }}</span>
+        </button>
+        
+        <div class="notification-dropdown" *ngIf="showNotifications">
+          <div class="notification-header">
+            <h4>Notifications</h4>
+            <button class="close-notifications" (click)="showNotifications = false">×</button>
+          </div>
+          <div class="notification-list">
+            <div class="notification-item" *ngFor="let notification of notifications.slice(0, 5)" 
+                 [class.unread]="!notification.isRead"
+                 (click)="markNotificationAsRead(notification.id)">
+              <div class="notification-content">
+                <h5>{{ notification.title }}</h5>
+                <p>{{ notification.message }}</p>
+                <span class="notification-time">{{ notification.createdAt | date:'short' }}</span>
+              </div>
+            </div>
+            <div class="no-notifications" *ngIf="notifications.length === 0">
+              <p>No notifications</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="user-profile-container">
+        <button class="nav-btn user-profile-btn" (click)="toggleUserDropdown()" title="User Profile">
+          <i class="pi pi-user"></i>
+          <span>{{ currentUsername }}</span>
+        </button>
+        
+        <div class="user-dropdown" *ngIf="showUserDropdown">
+          <div class="user-dropdown-header">
+            <div class="user-avatar-dropdown">
+              {{ currentUsername.charAt(0).toUpperCase() }}
+            </div>
+            <div class="user-info-dropdown">
+              <h4>{{ currentUsername }}</h4>
+              <p>{{ getCurrentUserEmail() }}</p>
+              <span class="user-role-badge">{{ currentUserRole }}</span>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-menu-items">
+            <button class="dropdown-item logout-item" (click)="logout()">
+              <i class="pi pi-sign-out"></i>
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- Content wrapper for sidebar and main content -->
+  <div class="content-wrapper">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" [class.hidden]="sidebarHidden" [class.collapsed]="sidebarHidden">
+      <div class="sidebar-header">
+        <div class="admin-icon">
+          <i class="pi pi-shield"></i>
+        </div>
+        <div class="admin-info">
+          <h2>Super Admin</h2>
+          <span class="admin-status">System Control</span>
+        </div>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button 
+          class="nav-item"
+          [class.active]="activeTab === 'overview'"
+          (click)="setActiveTab('overview')"
+          data-tooltip="System Overview"
+        >
+          <i class="pi pi-chart-pie"></i>
+          <span>Overview</span>
+        </button>
+        
+        <button 
+          class="nav-item"
+          [class.active]="activeTab === 'members'"
+          (click)="setActiveTab('members')"
+          data-tooltip="User Management"
+        >
+          <i class="pi pi-users"></i>
+          <span>Members</span>
+        </button>
+        
+        <div class="nav-section-header">
+          <span>RESOURCES</span>
+        </div>
+        
+        <button 
+          class="nav-item"
+          [class.active]="activeTab === 'shared-resources'"
+          (click)="setActiveTab('shared-resources')"
+          data-tooltip="Shared Resources"
+        >
+          <i class="pi pi-share-alt"></i>
+          <span>Shared Resources</span>
+        </button>
+        
+        <button 
+          class="nav-item"
+          [class.active]="activeTab === 'project-resources'"
+          (click)="setActiveTab('project-resources')"
+          data-tooltip="Project Resources"
+        >
+          <i class="pi pi-folder"></i>
+          <span>Project Resources</span>
+        </button>
+        
+        <div class="nav-separator"></div>
+        
+        <button 
+          class="nav-item"
+          [class.active]="activeTab === 'activity-history'"
+          (click)="setActiveTab('activity-history')"
+          data-tooltip="Activity History"
+        >
+          <i class="pi pi-history"></i>
+          <span>Activity History</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-content" [class.expanded]="sidebarHidden">
+      <header class="content-header">
+        <div class="header-left">
+          <h1>{{ getTabTitle() }}</h1>
+          <p class="section-description">System administration and monitoring</p>
+        </div>
+      </header>
+
+      <main class="tab-content">
+        <!-- Overview Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'overview'">
+          <div class="admin-overview-grid">
+            <!-- Top Row - Main Stats -->
+            <div class="overview-card stat-card">
+              <h3><i class="pi pi-users"></i> Total Users</h3>
+              <div class="stat-number">{{ systemStats.totalUsers }}</div>
+              <div class="stat-details">
+                <span>{{ systemStats.activeUsers }} Active</span>
+              </div>
+            </div>
+            
+            <div class="overview-card stat-card">
+              <h3><i class="pi pi-folder"></i> Total Projects</h3>
+              <div class="stat-number">{{ systemStats.totalProjects }}</div>
+              <div class="stat-details">
+                <span>{{ systemStats.activeProjects }} Active</span>
+              </div>
+            </div>
+            
+            <div class="overview-card stat-card">
+              <h3><i class="pi pi-database"></i> Total Resources</h3>
+              <div class="stat-number">{{ systemStats.totalResources }}</div>
+              <div class="stat-details">
+                <span>System-wide resources</span>
+              </div>
+            </div>
+            
+            <div class="overview-card stat-card">
+              <h3><i class="pi pi-key"></i> Access Requests</h3>
+              <div class="stat-number">{{ systemStats.totalRequests }}</div>
+              <div class="stat-details">
+                <span>{{ systemStats.pendingRequests }} Pending</span>
+              </div>
+            </div>
+            
+            <!-- Second Row - Charts -->
+            <div class="overview-card chart-card">
+              <h3><i class="pi pi-chart-pie"></i> Project Status Distribution</h3>
+              <div class="chart-container">
+                <div class="pie-chart project-status-chart">
+                  <div class="chart-center">
+                    <span class="chart-total">{{ systemStats.totalProjects }}</span>
+                    <span class="chart-label">Projects</span>
+                  </div>
+                </div>
+                <div class="chart-legend">
+                  <div class="legend-item">
+                    <span class="legend-color active"></span>
+                    <span>Active ({{ systemStats.activeProjects }})</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-color completed"></span>
+                    <span>Completed ({{ systemStats.completedProjects }})</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="legend-color inactive"></span>
+                    <span>Inactive ({{ systemStats.inactiveProjects }})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="overview-card chart-card">
+              <h3><i class="pi pi-chart-bar"></i> User Role Distribution</h3>
+              <div class="bar-chart-container">
+                <div class="bar-chart">
+                  <div class="bar-item">
+                    <div class="bar-fill admins" [style.height.%]="getUserRolePercentage('admins')"></div>
+                    <span class="bar-label">Admins</span>
+                    <span class="bar-value">{{ userRoleChart.admins }}</span>
+                  </div>
+                  <div class="bar-item">
+                    <div class="bar-fill managers" [style.height.%]="getUserRolePercentage('managers')"></div>
+                    <span class="bar-label">Managers</span>
+                    <span class="bar-value">{{ userRoleChart.managers }}</span>
+                  </div>
+                  <div class="bar-item">
+                    <div class="bar-fill teamleads" [style.height.%]="getUserRolePercentage('teamLeads')"></div>
+                    <span class="bar-label">Team Leads</span>
+                    <span class="bar-value">{{ userRoleChart.teamLeads }}</span>
+                  </div>
+                  <div class="bar-item">
+                    <div class="bar-fill members" [style.height.%]="getUserRolePercentage('members')"></div>
+                    <span class="bar-label">Members</span>
+                    <span class="bar-value">{{ userRoleChart.members }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Third Row - Additional Stats -->
+            <div class="overview-card metric-card">
+              <h3><i class="pi pi-shield"></i> Security Metrics</h3>
+              <div class="metrics-grid">
+                <div class="metric-item">
+                  <div class="metric-icon security">
+                    <i class="pi pi-lock"></i>
+                  </div>
+                  <div class="metric-info">
+                    <span class="metric-value">{{ systemStats.controlledResources }}</span>
+                    <span class="metric-label">Controlled Resources</span>
+                  </div>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-icon permissions">
+                    <i class="pi pi-key"></i>
+                  </div>
+                  <div class="metric-info">
+                    <span class="metric-value">{{ systemStats.activePermissions }}</span>
+                    <span class="metric-label">Active Permissions</span>
+                  </div>
+                </div>
+                <div class="metric-item">
+                  <div class="metric-icon shared">
+                    <i class="pi pi-share-alt"></i>
+                  </div>
+                  <div class="metric-info">
+                    <span class="metric-value">{{ systemStats.sharedDocuments }}</span>
+                    <span class="metric-label">Shared Documents</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="overview-card activity-summary-card">
+              <h3><i class="pi pi-history"></i> Recent Activity Summary</h3>
+              <div class="activity-summary">
+                <div class="activity-stat">
+                  <div class="activity-count pending">{{ systemStats.pendingRequests }}</div>
+                  <div class="activity-label">Pending Requests</div>
+                </div>
+                <div class="activity-stat">
+                  <div class="activity-count approved">{{ systemStats.approvedRequests }}</div>
+                  <div class="activity-label">Approved Today</div>
+                </div>
+                <div class="activity-stat">
+                  <div class="activity-count rejected">{{ systemStats.rejectedRequests }}</div>
+                  <div class="activity-label">Rejected Today</div>
+                </div>
+              </div>
+              <div class="activity-trend">
+                <i class="pi pi-arrow-up"></i>
+                <span>System activity is normal</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'members'">
+          <div class="members-container">
+            <div class="members-header">
+              <h3>User Management</h3>
+              <p>Manage all users in the system</p>
+            </div>
+            
+            <div class="members-controls">
+              <div class="filters-row">
+                <div class="filter-group">
+                  <label>Search Users</label>
+                  <input type="text" 
+                         [(ngModel)]="userFilters.search" 
+                         (input)="applyUserFilters()" 
+                         placeholder="Search by name, username, or email" 
+                         class="filter-input">
+                </div>
+                
+                <div class="filter-group">
+                  <label>Role</label>
+                  <select [(ngModel)]="userFilters.role" (change)="applyUserFilters()" class="filter-select">
+                    <option value="">All Roles</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="PROJECT_MANAGER">Project Manager</option>
+                    <option value="TEAMLEAD">Team Lead</option>
+                    <option value="TEAM_MEMBER">Team Member</option>
+                  </select>
+                </div>
+                
+                <div class="filter-group">
+                  <label>Sort By</label>
+                  <select [(ngModel)]="userSort.field" (change)="applySorting()" class="filter-select">
+                    <option value="createdAt">Date Created</option>
+                    <option value="username">Username</option>
+                    <option value="email">Email</option>
+                    <option value="role">Role</option>
+                  </select>
+                </div>
+                
+                <button class="sort-direction-btn" (click)="toggleSortDirection()">
+                  <i [class]="userSort.direction === 'asc' ? 'pi pi-sort-up' : 'pi pi-sort-down'"></i>
+                </button>
+                
+                <button class="clear-filters-btn" (click)="clearUserFilters()">
+                  <i class="pi pi-trash"></i> Clear
+                </button>
+              </div>
+            </div>
+            
+            <div class="users-grid">
+              <div class="user-card" *ngFor="let user of filteredUsers">
+                <div class="user-avatar">
+                  {{ user.username.charAt(0).toUpperCase() }}
+                </div>
+                <div class="user-info">
+                  <h4>{{ user.username }}</h4>
+                  <p>{{ user.email }}</p>
+                  <span class="user-role">{{ user.role }}</span>
+                </div>
+                <div class="user-meta">
+                  <span class="created-date">{{ user.createdAt | date:'short' }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="empty-state" *ngIf="filteredUsers.length === 0">
+              <h3>No users found</h3>
+              <p>Try adjusting your filters</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Resources Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'shared-resources'">
+          <div class="resources-container">
+            <div class="resources-header">
+              <h3><i class="pi pi-share-alt"></i> Shared Resources</h3>
+              <p>Company-wide shared documents and resources ({{ sharedResources.length }} resources)</p>
+            </div>
+            
+            <div class="resources-grid" *ngIf="sharedResources.length > 0">
+              <div class="resource-card" *ngFor="let resource of sharedResources">
+                <div class="resource-header">
+                  <div class="resource-icon">
+                    <i class="pi pi-file"></i>
+                  </div>
+                  <div class="resource-info">
+                    <h4>{{ resource.title }}</h4>
+                    <p class="resource-message">{{ resource.message }}</p>
+                  </div>
+                </div>
+                
+                <div class="resource-meta">
+                  <div class="author-info">
+                    <div class="author-avatar">{{ resource.authorName.charAt(0).toUpperCase() }}</div>
+                    <div class="author-details">
+                      <span class="author-name">{{ resource.authorName }}</span>
+                      <span class="author-role">{{ resource.authorRole }}</span>
+                    </div>
+                  </div>
+                  <span class="share-date">{{ resource.sharedAt | date:'short' }}</span>
+                </div>
+                
+                <div class="resource-actions">
+                  <button class="btn btn-sm btn-primary" title="View Document">
+                    <i class="pi pi-eye"></i> View
+                  </button>
+                  <button class="btn btn-sm btn-secondary" title="Download">
+                    <i class="pi pi-download"></i> Download
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="empty-state" *ngIf="sharedResources.length === 0">
+              <h3>No shared resources</h3>
+              <p>No shared resources available</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Resources Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'project-resources'">
+          <div class="resources-container">
+            <div class="resources-header">
+              <h3><i class="pi pi-folder"></i> Project Resources</h3>
+              <p>All projects and their resources ({{ allProjects.length }} projects)</p>
+            </div>
+            
+            <div class="projects-grid" *ngIf="allProjects.length > 0">
+              <div class="project-card" *ngFor="let project of allProjects" (click)="viewProjectResources(project)">
+                <div class="project-header">
+                  <div class="project-icon">
+                    <i class="pi pi-folder"></i>
+                  </div>
+                  <div class="project-status" [class]="getStatusClass(project.status)">{{ project.status }}</div>
+                </div>
+                
+                <div class="project-info">
+                  <h4>{{ project.name }}</h4>
+                  <p class="project-description">{{ project.description }}</p>
+                </div>
+                
+                <div class="project-meta">
+                  <div class="project-manager">
+                    <i class="pi pi-user"></i>
+                    <span>{{ project.managerName || 'No Manager' }}</span>
+                  </div>
+                  <div class="project-date">
+                    <i class="pi pi-calendar"></i>
+                    <span>{{ project.createdAt | date:'short' }}</span>
+                  </div>
+                </div>
+                
+                <div class="project-actions">
+                  <button class="btn btn-sm btn-primary" (click)="viewProjectResources(project); $event.stopPropagation()">
+                    <i class="pi pi-eye"></i> View Resources
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="empty-state" *ngIf="allProjects.length === 0">
+              <h3>No projects found</h3>
+              <p>No projects available in the system</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Detail Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'project-detail' && selectedProject">
+          <div class="project-detail-container">
+            <div class="project-detail-header">
+              <button class="back-btn" (click)="backToProjectList()">
+                <i class="pi pi-arrow-left"></i> Back to Projects
+              </button>
+              <div class="project-title">
+                <h3><i class="pi pi-folder"></i> {{ selectedProject.name }}</h3>
+                <p>{{ selectedProject.description }}</p>
+                <span class="project-status-badge" [class]="getStatusClass(selectedProject.status)">{{ selectedProject.status }}</span>
+              </div>
+            </div>
+            
+            <div class="resources-sections">
+              <!-- Common Resources Section -->
+              <div class="resource-section">
+                <div class="section-header">
+                  <h4><i class="pi pi-folder-open"></i> Common Resources ({{ projectCommonResources.length }})</h4>
+                  <p>Resources accessible to all team members</p>
+                </div>
+                
+                <div class="resource-table-container" *ngIf="projectCommonResources.length > 0">
+                  <table class="resource-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let resource of projectCommonResources">
+                        <td class="resource-name">{{ resource.name }}</td>
+                        <td><span class="resource-type-badge">{{ resource.type }}</span></td>
+                        <td><span class="resource-category-badge">{{ resource.category }}</span></td>
+                        <td class="resource-description">{{ resource.description }}</td>
+                        <td class="resource-date">{{ resource.createdAt | date:'short' }}</td>
+                        <td class="resource-actions">
+                          <button class="btn btn-xs btn-primary" (click)="viewResourceDetail(resource)" title="View Details">
+                            <i class="pi pi-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div class="empty-section" *ngIf="projectCommonResources.length === 0">
+                  <p>No common resources in this project</p>
+                </div>
+              </div>
+              
+              <!-- Controlled Resources Section -->
+              <div class="resource-section">
+                <div class="section-header">
+                  <h4><i class="pi pi-lock"></i> Controlled Resources ({{ projectControlledResources.length }})</h4>
+                  <p>Resources requiring approval for access</p>
+                </div>
+                
+                <div class="resource-table-container" *ngIf="projectControlledResources.length > 0">
+                  <table class="resource-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>User Groups</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let resource of projectControlledResources">
+                        <td class="resource-name">{{ resource.name }}</td>
+                        <td><span class="resource-type-badge">{{ resource.type }}</span></td>
+                        <td><span class="resource-category-badge">{{ resource.category }}</span></td>
+                        <td class="resource-description">{{ resource.description }}</td>
+                        <td class="user-groups">{{ resource.allowedUserGroups || 'None' }}</td>
+                        <td class="resource-date">{{ resource.createdAt | date:'short' }}</td>
+                        <td class="resource-actions">
+                          <button class="btn btn-xs btn-primary" (click)="viewResourceDetail(resource)" title="View Details">
+                            <i class="pi pi-eye"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div class="empty-section" *ngIf="projectControlledResources.length === 0">
+                  <p>No controlled resources in this project</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity History Tab -->
+        <div class="tab-panel" *ngIf="activeTab === 'activity-history'">
+          <div class="activity-container">
+            <div class="activity-header">
+              <h3><i class="pi pi-history"></i> Activity History</h3>
+              <p>Recent system activities across all teams ({{ recentActivities.length }} activities)</p>
+            </div>
+            
+            <!-- Activity Filters -->
+            <div class="activity-controls">
+              <div class="filters-row">
+                <div class="filter-group">
+                  <label>Project:</label>
+                  <select [(ngModel)]="activityFilters.team" (change)="applyActivityFilters()" class="filter-select">
+                    <option value="">All Projects</option>
+                    <option *ngFor="let project of allProjects" [value]="project.name">{{ project.name }}</option>
+                  </select>
+                </div>
+                
+                <div class="filter-group">
+                  <label>Action:</label>
+                  <select [(ngModel)]="activityFilters.action" (change)="applyActivityFilters()" class="filter-select">
+                    <option value="">All Actions</option>
+                    <option value="PENDING">Access Requests</option>
+                    <option value="APPROVED">Access Granted</option>
+                    <option value="REJECTED">Access Denied</option>
+                  </select>
+                </div>
+                
+                <div class="filter-group">
+                  <label>From Date:</label>
+                  <input type="date" [(ngModel)]="activityFilters.dateFrom" (change)="applyActivityFilters()" class="filter-input">
+                </div>
+                
+                <div class="filter-group">
+                  <label>To Date:</label>
+                  <input type="date" [(ngModel)]="activityFilters.dateTo" (change)="applyActivityFilters()" class="filter-input">
+                </div>
+                
+                <button class="clear-filters-btn" (click)="clearActivityFilters()">
+                  <i class="pi pi-trash"></i> Clear
+                </button>
+              </div>
+            </div>
+            
+            <!-- Activity Table -->
+            <div class="activity-table-container" *ngIf="recentActivities.length > 0">
+              <table class="activity-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Resource</th>
+                    <th>Project</th>
+                    <th>Timestamp</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let activity of recentActivities.slice(0, 50)" class="activity-row">
+                    <td class="status-cell">
+                      <span class="status-icon" [class]="getActivityIconClass(activity.status)">
+                        <i [class]="'pi ' + getActivityIcon(activity.type, activity.status)"></i>
+                      </span>
+                      <span class="status-badge" [class]="'status-' + activity.status.toLowerCase()">
+                        {{ activity.status }}
+                      </span>
+                    </td>
+                    <td class="user-cell">
+                      <div class="user-info">
+                        <div class="user-avatar-small">{{ activity.user.charAt(0).toUpperCase() }}</div>
+                        <span class="user-name">{{ activity.user }}</span>
+                      </div>
+                    </td>
+                    <td class="action-cell">{{ activity.action }}</td>
+                    <td class="resource-cell">
+                      <span class="resource-name">{{ activity.resource }}</span>
+                    </td>
+                    <td class="project-cell">
+                      <span class="project-name">{{ activity.project }}</span>
+                    </td>
+                    <td class="timestamp-cell">{{ activity.timestamp | date:'short' }}</td>
+                    <td class="details-cell">
+                      <span class="details-text" *ngIf="activity.details" [title]="activity.details">
+                        {{ activity.details.length > 50 ? (activity.details | slice:0:50) + '...' : activity.details }}
+                      </span>
+                      <span *ngIf="!activity.details" class="no-details">-</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="empty-state" *ngIf="recentActivities.length === 0">
+              <h3>No recent activities</h3>
+              <p>No system activities to display</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- Resource Detail Modal -->
+<div class="modal-overlay" *ngIf="showResourceDetailModal" (click)="closeResourceDetailModal()">
+  <div class="modal-content resource-detail-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="pi pi-info-circle"></i> Resource Details</h3>
+      <button class="close-btn" (click)="closeResourceDetailModal()">×</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedResourceDetail">
+      <div class="resource-detail-content">
+        <!-- Basic Information -->
+        <div class="detail-section">
+          <h4><i class="pi pi-file"></i> Basic Information</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Name:</label>
+              <span>{{ selectedResourceDetail.name }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Type:</label>
+              <span class="resource-type-badge">{{ selectedResourceDetail.type }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Category:</label>
+              <span class="resource-category-badge">{{ selectedResourceDetail.category }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Access Type:</label>
+              <span class="access-type-badge" [class]="selectedResourceDetail.accessType === 'COMMON' ? 'common' : 'controlled'">
+                {{ selectedResourceDetail.accessType === 'COMMON' ? 'Common Access' : 'Controlled Access' }}
+              </span>
+            </div>
+            <div class="detail-item full-width">
+              <label>Description:</label>
+              <span>{{ selectedResourceDetail.description }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- File Information -->
+        <div class="detail-section" *ngIf="selectedResourceDetail.filePath || selectedResourceDetail.resourceUrl || selectedResourceDetail.fileSize">
+          <h4><i class="pi pi-folder"></i> File Information</h4>
+          <div class="detail-grid">
+            <div class="detail-item" *ngIf="selectedResourceDetail.resourceUrl">
+              <label>URL:</label>
+              <a [href]="selectedResourceDetail.resourceUrl" target="_blank" class="resource-link">
+                {{ selectedResourceDetail.resourceUrl }}
+              </a>
+            </div>
+            <div class="detail-item" *ngIf="selectedResourceDetail.filePath">
+              <label>File Path:</label>
+              <span>{{ selectedResourceDetail.filePath }}</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedResourceDetail.fileSize">
+              <label>File Size:</label>
+              <span>{{ formatFileSize(selectedResourceDetail.fileSize) }}</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedResourceDetail.mimeType">
+              <label>MIME Type:</label>
+              <span>{{ selectedResourceDetail.mimeType }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Upload Information -->
+        <div class="detail-section">
+          <h4><i class="pi pi-upload"></i> Upload Information</h4>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label>Uploaded By:</label>
+              <span class="user-badge">{{ selectedResourceDetail.uploadedBy || selectedResourceDetail.createdBy || 'System' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Created At:</label>
+              <span>{{ selectedResourceDetail.createdAt | date:'medium' }}</span>
+            </div>
+            <div class="detail-item" *ngIf="selectedResourceDetail.allowedUserGroups">
+              <label>Allowed Groups:</label>
+              <span class="user-groups">{{ selectedResourceDetail.allowedUserGroups }}</span>
+            </div>
+            <div class="detail-item">
+              <label>Status:</label>
+              <span class="status-badge" [class]="'status-' + (selectedResourceDetail.status || 'active').toLowerCase()">
+                {{ selectedResourceDetail.status || 'ACTIVE' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Access Information -->
+        <div class="detail-section">
+          <h4><i class="pi pi-users"></i> Access Information ({{ resourceAccessList.length }} users)</h4>
+          
+          <div class="access-table-container" *ngIf="resourceAccessList.length > 0">
+            <table class="access-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Access Level</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let access of resourceAccessList">
+                  <td>
+                    <div class="user-cell">
+                      <div class="user-avatar-small">{{ access.username.charAt(0).toUpperCase() }}</div>
+                      <span class="username">{{ access.username }}</span>
+                    </div>
+                  </td>
+                  <td class="user-email">{{ access.email }}</td>
+                  <td><span class="access-level-badge">{{ access.accessLevel }}</span></td>
+                  <td><span class="status-badge granted">Active</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="empty-access" *ngIf="resourceAccessList.length === 0">
+            <p><i class="pi pi-info-circle"></i> No users have been granted explicit access to this resource</p>
+            <p *ngIf="selectedResourceDetail.accessType === 'COMMON'">This is a common resource accessible to all team members</p>
+            <p *ngIf="selectedResourceDetail.allowedUserGroups">Users from groups: <strong>{{ selectedResourceDetail.allowedUserGroups }}</strong> have automatic access</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="loading-container" *ngIf="loading">
+  <div class="loading-spinner"></div>
+  <p>Loading super admin dashboard...</p>
+</div>
+
+<app-toast></app-toast>

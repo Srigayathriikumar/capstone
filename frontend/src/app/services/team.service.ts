@@ -446,4 +446,12 @@ export class TeamService {
   removeUserFromProject(projectId: number, userId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/projects/${projectId}/users/${userId}`, { headers: this.getHeaders() });
   }
+  
+  deleteResource(resourceId: number, deletionReason: string): Observable<any> {
+    const requestBody = { deletionReason };
+    return this.http.delete(`${this.apiUrl}/resources/${resourceId}`, { 
+      headers: this.getHeaders(),
+      body: requestBody
+    });
+  }
 }

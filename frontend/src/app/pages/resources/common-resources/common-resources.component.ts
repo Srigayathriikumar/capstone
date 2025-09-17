@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } 
 import { ActivatedRoute, Router } from '@angular/router';
 import { TeamService, TeamResource, CreateResourceRequest } from '../../../services/team.service';
 import { LoadingService } from '../../../services/loading.service';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-common-resources',
@@ -46,7 +47,8 @@ export class CommonResourcesComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     public teamService: TeamService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private toastService: ToastService
   ) {
     this.addResourceForm = this.fb.group({
       name: ['', [Validators.required]],
@@ -189,12 +191,12 @@ export class CommonResourcesComponent implements OnInit {
     }
     
     if (this.uploadMode === 'file' && !this.selectedFile) {
-      alert('Please select a file to upload');
+      this.toastService.error('Error', 'Please select a file to upload');
       return;
     }
     
     if (this.uploadMode === 'url' && !this.addResourceForm.get('resourceUrl')?.value) {
-      alert('Please enter a resource URL');
+      this.toastService.error('Error', 'Please enter a resource URL');
       return;
     }
     
@@ -223,43 +225,16 @@ export class CommonResourcesComponent implements OnInit {
         submitBtn.textContent = 'Uploading...';
       }
       
+      this.toastService.info('Processing', 'Adding resource...');
+      
       this.teamService.createResourceWithFile(this.selectedFile, resourceData).subscribe({
         next: (response) => {
-          console.log('Resource created successfully:', response);
-          alert('Resource created successfully!');
+          this.toastService.success('Success', `Resource "${resourceData.name}" uploaded successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
         },
         error: (err) => {
-          console.error('Error creating resource with file:', {
-            status: err.status,
-            statusText: err.statusText,
-            error: err.error,
-            message: err.message,
-            url: err.url,
-            headers: err.headers,
-            fileInfo: {
-              name: this.selectedFile?.name,
-              size: this.selectedFile?.size,
-              type: this.selectedFile?.type
-            },
-            resourceData: resourceData
-          });
-          
-          let errorMessage = 'Failed to create resource';
-          
-          if (err.status === 413) {
-            errorMessage = 'File too large. Please select a smaller file.';
-          } else if (err.status === 415) {
-            errorMessage = 'Unsupported file type.';
-          } else if (err.status === 500) {
-            errorMessage = `Server error during file upload. Backend error: ${err.error?.message || 'Unknown server error'}. Please check the server logs.`;
-          } else if (err.error?.message) {
-            errorMessage = `Error: ${err.error.message}`;
-          }
-          
-          alert(errorMessage);
-          console.log('Full error object:', err);
+          this.toastService.error('Error', 'Failed to upload resource. Please try again.');
         },
         complete: () => {
           // Reset button state
@@ -270,16 +245,16 @@ export class CommonResourcesComponent implements OnInit {
         }
       });
     } else {
+      this.toastService.info('Processing', 'Adding resource...');
+      
       this.teamService.createResource(resourceData).subscribe({
         next: (response) => {
-          console.log('Resource created successfully:', response);
-          alert('Resource created successfully!');
+          this.toastService.success('Success', `Resource "${resourceData.name}" added successfully!`);
           this.closeAddResourceModal();
           this.loadResources();
         },
         error: (err) => {
-          console.error('Error creating resource:', err);
-          alert('Failed to create resource: ' + (err.error?.message || err.message));
+          this.toastService.error('Error', 'Failed to add resource. Please try again.');
         }
       });
     }
@@ -291,7 +266,7 @@ export class CommonResourcesComponent implements OnInit {
       // Check file size (limit to 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (file.size > maxSize) {
-        alert('File size too large. Please select a file smaller than 10MB.');
+        this.toastService.error('Error', 'File size too large. Please select a file smaller than 10MB.');
         event.target.value = '';
         this.selectedFile = null;
         return;

@@ -1,22 +1,24 @@
 .login-container {
   min-height: 100vh;
   display: flex;
-  background: #f8fafc;
+  background-image: url('/login3.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
 }
 
+
+
 .login-left {
-  flex: 1.6;
-  position: relative;
-  overflow: hidden;
-  clip-path: polygon(0 0, 85% 0, 100% 100%, 0 100%);
+  display: none;
 }
 
 .login-image {
   width: 100%;
   height: 100vh;
-  object-fit: contain;
-  object-position: left center;
+  object-fit: cover;
+  object-position: center;
 }
 
 .image-overlay {
@@ -25,7 +27,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+  background: transparent;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -51,30 +53,32 @@
 }
 
 .login-right {
-  flex: 1;
+  flex: none;
+  width: auto;
+  max-width: 90vw;
+  margin-left: auto;
+  margin-right: 15rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  background: white;
+  padding: 0;
+  background: transparent;
   position: relative;
+  z-index: 2;
 }
 
 .login-right::before {
-  content: '';
-  position: absolute;
-  left: -50px;
-  top: 0;
-  bottom: 0;
-  width: 100px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  transform: skewX(-15deg);
-  box-shadow: -10px 0 30px rgba(102, 126, 234, 0.2);
+  display: none;
 }
 
 .login-form-container {
-  width: 100%;
-  max-width: 400px;
+  width: auto;
+  min-width: 350px;
+  max-width: 600px;
+  background: white;
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 .login-header {
@@ -146,7 +150,7 @@
 }
 
 .login-btn {
-  background: rgb(29, 29, 89);
+  background: #1976d2;
   color: white;
   border: none;
   padding: 16px 20px;
@@ -161,12 +165,13 @@
   gap: 8px;
   margin-top: 1rem;
   width: 100%;
-  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.3);
+  box-shadow: none;
 }
 
 .login-btn:hover:not(:disabled) {
+  background: #1565c0;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(25, 118, 210, 0.4);
 }
 
 .login-btn:disabled {
