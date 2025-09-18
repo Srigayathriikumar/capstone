@@ -83,6 +83,7 @@ public class DataInitializer implements CommandLineRunner {
         Project eventManagement = createProject("Event Management", "Corporate event planning and management platform", Project.ProjectStatus.ACTIVE);
         Project taskHub = createProject("Personalised TaskHub", "Personal task management and productivity system", Project.ProjectStatus.ACTIVE);
         Project budgetTracker = createProject("Budget Tracker", "Financial budget planning and expense tracking system", Project.ProjectStatus.ACTIVE);
+        Project enterpriseResourcePlanning = createProject("Enterprise Resource Planning", "Comprehensive ERP system for business process management", Project.ProjectStatus.ACTIVE);
 
         // Initialize user sets for projects
         meetingRoomBooking.setUsers(new HashSet<>(Arrays.asList(manager1, teamlead1, dev1, dev2, tester1)));
@@ -93,8 +94,9 @@ public class DataInitializer implements CommandLineRunner {
         eventManagement.setUsers(new HashSet<>(Arrays.asList(manager1, teamlead6, dev1, dev3, tester6)));
         taskHub.setUsers(new HashSet<>(Arrays.asList(manager2, teamlead7, dev2, dev4, tester7)));
         budgetTracker.setUsers(new HashSet<>(Arrays.asList(manager3, teamlead8, dev5, dev7, tester8)));
+        enterpriseResourcePlanning.setUsers(new HashSet<>(Arrays.asList(manager1, teamlead10, dev1)));
 
-        projectRepository.saveAll(Arrays.asList(meetingRoomBooking, employee360, leaveManagement, assetDesk, visitorPortal, eventManagement, taskHub, budgetTracker));
+        projectRepository.saveAll(Arrays.asList(meetingRoomBooking, employee360, leaveManagement, assetDesk, visitorPortal, eventManagement, taskHub, budgetTracker, enterpriseResourcePlanning));
 
         // Create Resources - 4 Common and 4 Controlled per project
         
@@ -146,6 +148,30 @@ public class DataInitializer implements CommandLineRunner {
         Resource budgetDocs = createResource("Budget Tracker Docs", "Budget system documentation", Resource.ResourceType.DOC, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/budget-tracker.doc", false, budgetTracker, "jennifer.dev");
         Resource budgetRepo = createResource("Budget Tracker Repository", "Budget tracker source code", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/budget-tracker", false, budgetTracker, "peter.dev");
         
+        // Enterprise Resource Planning Common Resources
+        Resource erpDocs = createResource("ERP System Documentation", "Complete ERP system user guide and documentation", Resource.ResourceType.PDF, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/erp-guide.pdf", false, enterpriseResourcePlanning, "arjun.dev");
+        Resource erpRepo = createResource("ERP Source Repository", "Main ERP system source code repository", Resource.ResourceType.GITHUB_LINK, Resource.ResourceCategory.REPOSITORY, Resource.ResourceAccessType.COMMON, "https://github.com/company/erp-system", false, enterpriseResourcePlanning, "arjun.dev");
+        Resource erpBlog = createResource("ERP Implementation Blog", "Best practices and implementation guides for ERP", Resource.ResourceType.URL, Resource.ResourceCategory.EXTERNAL_LINKS, Resource.ResourceAccessType.COMMON, "https://blog.company.com/erp-implementation", false, enterpriseResourcePlanning, "jane.teamlead");
+        Resource erpTraining = createResource("ERP Training Videos", "Training materials and video tutorials for ERP system", Resource.ResourceType.URL, Resource.ResourceCategory.MEDIA, Resource.ResourceAccessType.COMMON, "https://training.company.com/erp-videos", false, enterpriseResourcePlanning, "jane.teamlead");
+        Resource erpWiki = createResource("ERP Knowledge Base", "Internal wiki with ERP processes and procedures", Resource.ResourceType.URL, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://wiki.company.com/erp", false, enterpriseResourcePlanning, "arjun.dev");
+        Resource erpSpecs = createResource("ERP Technical Specifications", "Technical architecture and system specifications", Resource.ResourceType.DOC, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://docs.company.com/erp-specs.doc", false, enterpriseResourcePlanning, "jane.teamlead");
+        Resource erpTestData = createResource("ERP Test Dataset", "Sample data for ERP system testing and development", Resource.ResourceType.JSON, Resource.ResourceCategory.OTHER, Resource.ResourceAccessType.COMMON, "https://data.company.com/erp-testdata.json", false, enterpriseResourcePlanning, "arjun.dev");
+        Resource erpAPIGuide = createResource("ERP API Documentation", "Complete API reference and integration guide", Resource.ResourceType.URL, Resource.ResourceCategory.API, Resource.ResourceAccessType.COMMON, "https://api-docs.company.com/erp", false, enterpriseResourcePlanning, "jane.teamlead");
+        Resource erpUserManual = createResource("ERP User Manual", "End-user manual for ERP system operations", Resource.ResourceType.PDF, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://manuals.company.com/erp-user-guide.pdf", false, enterpriseResourcePlanning, "arjun.dev");
+        Resource erpConfigGuide = createResource("ERP Configuration Guide", "System configuration and setup instructions", Resource.ResourceType.DOC, Resource.ResourceCategory.DOCUMENTATION, Resource.ResourceAccessType.COMMON, "https://config.company.com/erp-setup.doc", false, enterpriseResourcePlanning, "jane.teamlead");
+        
+        // Enterprise Resource Planning Controlled Resources
+        Resource erpProdDB = createResource("ERP Production Database", "Main production database for ERP system", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://erp-prod:5432/erp_production", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpFinanceAPI = createResource("ERP Finance API", "Financial module API with sensitive data access", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/erp/finance", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpHRDB = createResource("ERP HR Database", "Human resources database with employee sensitive data", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://erp-hr:5432/hr_data", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpPayrollAPI = createResource("ERP Payroll API", "Payroll processing API with salary information", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/erp/payroll", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpInventoryDB = createResource("ERP Inventory Database", "Inventory management database with stock data", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://erp-inventory:5432/inventory", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpSupplierAPI = createResource("ERP Supplier API", "Supplier management API with vendor information", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/erp/suppliers", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpReportsDB = createResource("ERP Reports Database", "Business intelligence and reporting database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://erp-reports:5432/bi_reports", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpCustomerAPI = createResource("ERP Customer API", "Customer relationship management API", Resource.ResourceType.API, Resource.ResourceCategory.API, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://api.company.com/erp/customers", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpAuditDB = createResource("ERP Audit Database", "Audit trail and compliance database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.MANAGER_CONTROLLED, "jdbc:postgresql://erp-audit:5432/audit_logs", false, enterpriseResourcePlanning, "priya.manager");
+        Resource erpAdminPanel = createResource("ERP Admin Panel", "Administrative control panel for system management", Resource.ResourceType.URL, Resource.ResourceCategory.CLOUD_SERVICES, Resource.ResourceAccessType.MANAGER_CONTROLLED, "https://admin.company.com/erp", false, enterpriseResourcePlanning, "priya.manager");
+        
         // Global Common Resources
         Resource testDB = createResource("Test Database", "Global testing environment database", Resource.ResourceType.DATABASE, Resource.ResourceCategory.DATABASE, Resource.ResourceAccessType.COMMON, "jdbc:postgresql://test-db:5432/test", false, null, "rajesh.admin");
         Resource jenkins = createResource("Jenkins CI/CD", "Continuous integration and deployment server", Resource.ResourceType.URL, Resource.ResourceCategory.CLOUD_SERVICES, Resource.ResourceAccessType.COMMON, "https://jenkins.company.com", true, null, "rajesh.admin");
@@ -154,7 +180,7 @@ public class DataInitializer implements CommandLineRunner {
 
         // Auto-grant permissions for COMMON resources to team members only
         List<User> teamMembers = Arrays.asList(dev1, dev2, dev3, dev4, dev5, dev6, dev7, dev8, dev9, dev10, tester1, tester2, tester3, tester4, tester5, tester6, tester7, tester8);
-        List<Resource> commonResources = Arrays.asList(testDB, jenkins, sonarqube, meetingDocs, meetingRepo, employeeDocs, employeeRepo, leaveDocs, leaveRepo, assetDocs, assetRepo, visitorDocs, visitorRepo, eventDocs, eventRepo, taskDocs, taskRepo, budgetDocs, budgetRepo);
+        List<Resource> commonResources = Arrays.asList(testDB, jenkins, sonarqube, meetingDocs, meetingRepo, employeeDocs, employeeRepo, leaveDocs, leaveRepo, assetDocs, assetRepo, visitorDocs, visitorRepo, eventDocs, eventRepo, taskDocs, taskRepo, budgetDocs, budgetRepo, erpDocs, erpRepo, erpBlog, erpTraining, erpWiki, erpSpecs, erpTestData, erpAPIGuide, erpUserManual, erpConfigGuide);
         
         // Grant READ access to COMMON resources for team members only
         for (User teamMember : teamMembers) {
@@ -183,6 +209,16 @@ public class DataInitializer implements CommandLineRunner {
         createPermission(manager4, assetAPI, Permission.AccessLevel.ADMIN, null);
         createPermission(manager5, visitorDB, Permission.AccessLevel.ADMIN, null);
         createPermission(manager5, visitorAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpProdDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpFinanceAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpHRDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpPayrollAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpInventoryDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpSupplierAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpReportsDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpCustomerAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpAuditDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(manager1, erpAdminPanel, Permission.AccessLevel.ADMIN, null);
         
         // Team Lead permissions - each team lead has ADMIN access to their project resources
         createPermission(teamlead1, meetingDB, Permission.AccessLevel.ADMIN, null);
@@ -201,6 +237,16 @@ public class DataInitializer implements CommandLineRunner {
         createPermission(teamlead7, taskAPI, Permission.AccessLevel.ADMIN, null);
         createPermission(teamlead8, budgetDB, Permission.AccessLevel.ADMIN, null);
         createPermission(teamlead8, budgetAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpProdDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpFinanceAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpHRDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpPayrollAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpInventoryDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpSupplierAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpReportsDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpCustomerAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpAuditDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(teamlead10, erpAdminPanel, Permission.AccessLevel.ADMIN, null);
         
         // Admin permissions - full access to all resources
         createPermission(admin, apiGateway, Permission.AccessLevel.ADMIN, null);
@@ -212,6 +258,16 @@ public class DataInitializer implements CommandLineRunner {
         createPermission(admin, eventDB, Permission.AccessLevel.ADMIN, null);
         createPermission(admin, taskDB, Permission.AccessLevel.ADMIN, null);
         createPermission(admin, budgetDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpProdDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpFinanceAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpHRDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpPayrollAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpInventoryDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpSupplierAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpReportsDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpCustomerAPI, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpAuditDB, Permission.AccessLevel.ADMIN, null);
+        createPermission(admin, erpAdminPanel, Permission.AccessLevel.ADMIN, null);
 
         // Create Access Requests - project-scoped with existing resources
         // E-commerce project PENDING requests (prodDB, paymentGateway belong to ecommerce)
@@ -242,6 +298,13 @@ public class DataInitializer implements CommandLineRunner {
         createAccessRequest(dev1, eventDB, Permission.AccessLevel.READ, "Need event database access for development", AccessRequest.RequestStatus.PENDING, null, null, null);
         createAccessRequest(dev5, visitorDB, Permission.AccessLevel.READ, "Need database access for performance optimization", AccessRequest.RequestStatus.REJECTED, manager5, "Use staging environment", LocalDateTime.now().minusDays(2));
         createAccessRequest(dev6, apiGateway, Permission.AccessLevel.READ, "Need API gateway access for security audit", AccessRequest.RequestStatus.APPROVED, admin, "Approved for security review", LocalDateTime.now().minusDays(4));
+        
+        // ERP Access Requests
+        createAccessRequest(dev1, erpProdDB, Permission.AccessLevel.READ, "Need production database access for ERP module development", AccessRequest.RequestStatus.PENDING, null, null, null);
+        createAccessRequest(dev1, erpFinanceAPI, Permission.AccessLevel.READ, "Need finance API access for integration testing", AccessRequest.RequestStatus.APPROVED, manager1, "Approved for development work", LocalDateTime.now().minusDays(1));
+        createAccessRequest(dev2, erpHRDB, Permission.AccessLevel.READ, "Need HR database access for employee module development", AccessRequest.RequestStatus.PENDING, null, null, null);
+        createAccessRequest(tester1, erpInventoryDB, Permission.AccessLevel.READ, "Need inventory database access for testing stock management features", AccessRequest.RequestStatus.REJECTED, manager1, "Use test environment for inventory testing", LocalDateTime.now().minusDays(2));
+        createAccessRequest(dev3, erpReportsDB, Permission.AccessLevel.READ, "Need reports database access for business intelligence features", AccessRequest.RequestStatus.PENDING, null, null, null);
         
 
 

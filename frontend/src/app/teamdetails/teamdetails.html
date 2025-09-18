@@ -2103,9 +2103,10 @@
       <div class="project-card" 
            *ngFor="let project of allProjects" 
            [class.current]="project.id === teamId"
+           [class.inactive]="project.status === 'INACTIVE'"
            (click)="selectProject(project.id)">
         <div class="project-icon">
-          <i class="pi pi-folder"></i>
+          <i class="pi" [class.pi-folder]="project.status !== 'INACTIVE'" [class.pi-lock]="project.status === 'INACTIVE'"></i>
         </div>
         <div class="project-info">
           <h4>{{ project.name }}</h4>

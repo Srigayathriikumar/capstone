@@ -1632,6 +1632,12 @@ export class Teamdetails implements OnInit {
   selectProject(projectId: number): void {
     if (projectId !== this.teamId) {
       const selectedProject = this.allProjects.find(p => p.id === projectId);
+      
+      if (selectedProject?.status === 'INACTIVE' && (this.currentUsername.includes('.dev') || this.currentUsername.includes('.test'))) {
+        this.toastService.error('Access Denied', 'This project is currently inactive and cannot be accessed.');
+        return;
+      }
+      
       this.closeProjectSwitcher();
       this.loadingService.show();
       this.toastService.success('Success', `Switching to project: ${selectedProject?.name || 'Unknown'}`);

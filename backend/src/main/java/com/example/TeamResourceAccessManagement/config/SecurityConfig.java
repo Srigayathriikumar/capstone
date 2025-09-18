@@ -174,7 +174,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:4200", 
             "http://localhost:4201", 
-            "http://localhost:65309",
+            "http://localhost:4203",
             "http://localhost:4202"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));

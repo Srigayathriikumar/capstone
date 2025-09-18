@@ -27,9 +27,17 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponseDTO> getProjectById(@PathVariable Long id) {
+    public ResponseEntity<ProjectResponseDTO> getProjectById(@PathVariable Long id, java.security.Principal principal) {
         return projectService.getProjectById(id)
-            .map(project -> ResponseEntity.ok(project))
+            .map(project -> {
+                if (project.getStatus() == Project.ProjectStatus.INACTIVE) {
+                    String username = principal.getName();
+                    if (username.contains(".dev") || username.contains(".test")) {
+                        throw new RuntimeException("Access denied: Project is inactive");
+                    }
+                }
+                return ResponseEntity.ok(project);
+            })
             .orElseThrow(() -> new ProjectNotFoundException("Project not found with id: " + id));
     }
 
